@@ -109,6 +109,11 @@ android {
     }
   }
 
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
   sourceSets {
       // Adds exported schema location as test app assets.
       androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
@@ -126,7 +131,7 @@ android {
 
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_21
-    targetCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_21
   }
 
   testOptions.unitTests.all {
@@ -144,8 +149,6 @@ android {
     systemProperties['junit.jupiter.execution.parallel.mode.default'] = "concurrent"
   }
 }
-
-apply plugin: "com.facebook.react"
 
 repositories {
   mavenLocal()
