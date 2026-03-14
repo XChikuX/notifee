@@ -108,6 +108,7 @@
   },
   "workspaces": [
     "packages/*",
+    "packages/react-native/example",
     "tests_react_native"
   ],
   "dependencies": {
