@@ -70,11 +70,11 @@ subprojects {
   afterEvaluate { project ->
     if (!project.name.equalsIgnoreCase('app') && project.hasProperty('android')) {
       android {
-        compileSdk rootProject.ext.compileSdkVersion
-        buildToolsVersion rootProject.ext.buildToolsVersion
+        compileSdkVersion compileSdk
+        buildToolsVersion buildTools
         defaultConfig {
-          minSdkVersion rootProject.ext.minSdkVersion
-          targetSdkVersion rootProject.ext.targetSdkVersion
+          minSdkVersion minSdk
+          targetSdkVersion targetSdk
         }
       }
     }

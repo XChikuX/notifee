@@ -12,12 +12,12 @@ android {
   compileSdkVersion rootProject.ext.compileSdkVersion
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_21
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_17
   }
 
   kotlinOptions {
-    jvmTarget = '21'
+    jvmTarget = '17'
   }
 
   buildFeatures {
@@ -92,6 +92,9 @@ react {
 dependencies {
   implementation fileTree(dir: "libs", include: ["*.jar"])
   implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+
+  // React Native - provides prefab artifacts for New Architecture
+  implementation "com.facebook.react:react-native:0.83.4"
 
   androidTestImplementation 'junit:junit:4.13.2'
   androidTestImplementation 'androidx.test:runner:1.4.0'
