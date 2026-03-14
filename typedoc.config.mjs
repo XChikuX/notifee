@@ -51,11 +51,9 @@ const config = {
         replacer: url => {
           if (url.startsWith('/react-native/')) return url;
 
-          let modifiedUrl = url;
-
           // Remove `.mdx` from all other URLs so docs.page links work
           // (docs.page uses .mdx files but expects links to be without the `.mdx`)
-          modifiedUrl = url.replace('.mdx', '');
+          let modifiedUrl = url.replace('.mdx', '');
 
           // For relative links we need to add the path components docs.page expects
           if (!url.includes('/')) modifiedUrl = 'react-native/reference/' + modifiedUrl;
