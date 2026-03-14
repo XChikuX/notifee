@@ -6,6 +6,8 @@ ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 $NotifeeCoreFromSources = true
 
+platform :ios, '15.1'
+
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,

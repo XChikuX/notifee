@@ -11,6 +11,6 @@ Pod::Spec.new do |s|
   s.source              = { :git => "https://github.com/invertase/notifee" }
   s.social_media_url    = 'http://twitter.com/notifee_app'
 
-  s.ios.deployment_target   = '10.0'
+  s.ios.deployment_target   = '15.1'
   s.source_files             = 'NotifeeCore/*.{h,m}'
 end
