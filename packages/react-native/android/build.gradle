@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-      classpath("com.android.tools.build:gradle:7.0.3")
+      classpath("com.android.tools.build:gradle:8.7.3")
     }
   }
 }
@@ -50,12 +50,9 @@ project.ext {
   set('react-native', [
     versions: [
       android: [
-        minSdk    : 20,
-        targetSdk : 33,
-        compileSdk: 34,
-        // optional as gradle.buildTools comes with one by default
-        // overriding here though to match the version RN uses
-        // buildTools: "29.0.2"
+        minSdk    : 28,
+        targetSdk : 35,
+        compileSdk: 36,
       ],
     ],
   ])
@@ -76,8 +73,8 @@ android {
     abortOnError false
   }
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_17
   }
   buildTypes {
     release {

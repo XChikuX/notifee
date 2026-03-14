@@ -23,7 +23,7 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
 
-#import <React/RCTAppSetupUtils.h>
+#import <React-RCTAppDelegate/RCTAppSetupUtils.h>
 
 #if RCT_NEW_ARCH_ENABLED
 #import <React/CoreModulesPlugins.h>
@@ -57,7 +57,11 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
   }
   [[UIApplication sharedApplication] registerForRemoteNotifications];
 
-  RCTAppSetupPrepareApp(application);
+#if RCT_NEW_ARCH_ENABLED
+  RCTAppSetupPrepareApp(application, YES);
+#else
+  RCTAppSetupPrepareApp(application, NO);
+#endif
 
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
 
@@ -70,7 +74,11 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
 #endif
 
   NSDictionary *initProps = [self prepareInitialProps];
-  UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"testing", initProps);
+#if RCT_NEW_ARCH_ENABLED
+  UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"testing", initProps, YES);
+#else
+  UIView *rootView = RCTAppSetupDefaultRootView(bridge, @"testing", initProps, NO);
+#endif
 
   if (@available(iOS 13.0, *)) {
     rootView.backgroundColor = [UIColor systemBackgroundColor];
