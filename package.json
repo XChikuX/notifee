@@ -1,7 +1,6 @@
 {
   "name": "@notifications/root",
   "private": true,
-  "type": "module",
   "license": "Apache-2.0",
   "scripts": {
     "prepare": "bun run lerna:link && lerna run prepare && bun run build:core:ios && (bun run tests_rn:ios:pod:install || true)",
@@ -73,7 +72,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-native": "^4.1.0",
     "google-java-format": "^1.4.0",
-    "lerna": "^4.0.0",
+    "lerna": "^8.0.0",
     "prettier": "^3.8.1",
     "remark-link-rewrite": "^1.0.7",
     "rimraf": "^3.0.2",
@@ -83,10 +82,6 @@
     "typedoc-plugin-markdown": "^4.6.2",
     "typedoc-plugin-remark": "^2.0.1",
     "typescript": "^5.9.3"
-  },
-  "resolutions": {
-    "@types/node": "^25.5.0",
-    "scheduler": "0.25.0"
   },
   "lint-staged": {
     "packages/**/*.js": [
