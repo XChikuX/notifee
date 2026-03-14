@@ -4,7 +4,7 @@ buildscript {
   ext {
     minSdkVersion = 28
     compileSdkVersion = 36
-    targetSdkVersion = 36
+    targetSdkVersion = 35
     ndkVersion = "27.2.12479018"
     kotlinVersion = "1.9.25"
     enableHermes = true
@@ -25,10 +25,6 @@ buildscript {
 }
 
 allprojects {
-  task notifeeDownloadDependencies() {
-    description 'Download all dependencies to the Gradle cache'
-  }
-
   repositories {
     mavenLocal()
     maven {
