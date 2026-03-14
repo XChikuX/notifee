@@ -32,10 +32,22 @@ target 'NotifeeTestingNSE' do
   pod 'RNNotifeeCore', :path => "../../packages/react-native"
 end
 
+pre_install do |installer|
+  # Set Swift version on the app target BEFORE validation (required for RCTSwiftUI)
+  installer.aggregate_targets.each do |target|
+    target.user_project.targets.each do |app_target|
+      app_target.build_configurations.each do |config|
+        config.build_settings['SWIFT_VERSION'] = '5.0'
+      end
+    end
+    target.user_project.save
+  end
+end
+
 post_install do |installer|
   react_native_post_install(installer)
 
-  # Set Swift version on the app target (required for RCTSwiftUI)
+  # Re-apply Swift version after install (ensures persistence)
   installer.aggregate_targets.each do |target|
     target.user_project.targets.each do |app_target|
       app_target.build_configurations.each do |config|
