@@ -22,7 +22,7 @@ notifee/
 
 ## Package Manager
 
-This project uses **Bun** (`bun@1.3.9`) as the package manager.
+This project uses **Bun** (`bun@1.3.10`) as the package manager.
 
 ```bash
 # Install dependencies
