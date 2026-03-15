@@ -1,54 +1,51 @@
-<!-- markdownlint-disable MD033 -->
 <p align="center">
-  <a href="https://invertase.io">
-    <img width="140px" src="https://static.invertase.io/assets/notifee-logo.png"><br/>
+  <a href="https://psync.club">
+    <img width="150px" src="https://psync.club/favicon.ico"><br/>
   </a>
-  <h3 align="center">Notifee Notifications</h3>
-  <a href="https://invertase.link/discord">
-   <img src="https://img.shields.io/discord/295953187817521152.svg?style=flat-square&colorA=7289da&label=Chat%20on%20Discord" alt="Chat on Discord">
- </a>
+  <a href="https://notifee.app">
+    <img width="50px" src="https://notifee.app/logo-icon.png"><br/>
+  </a>
+  <h2 align="center">Notifee - React Native</h2>
 </p>
 
-<hr/>
+---
 
-<!-- markdownlint-disable MD041 -->
-
-> ⚠️ **New Architecture Only**: This version of Notifee is built **exclusively for React Native New Architecture**. It requires React Native 0.81+ with the New Architecture enabled. For the legacy architecture, use the stable release branch.
+> ⚠️ **New Architecture Only**: This version of Notifee is built **exclusively for React Native New Architecture**. It requires React Native 0.83+ with the New Architecture enabled. For the legacy architecture, use the @invertase/notifee package.
 
 A feature rich Android & iOS notifications library for React Native.
 
-[> Learn More](https://docs.page/invertase/notifee/)
-
----
-
-> Notifee is going Noti-'free' - free and fully open source. [[Learn more]](https://invertase.io/blog/open-sourcing-notifee)
-
----
+[> Learn More](https://notifee.app/)
+[> Get Started](https://notifee.app/react-native/docs/overview)
+[> GitHub](https://github.com/New-Elysium/notifee)
+[> Join the Club](https://psync.club)
 
 ## Platform Requirements
 
 | Requirement | Minimum Version |
 |-------------|-----------------|
-| React Native | 0.81+ (New Architecture only) |
+| React Native | 0.83+ (New Architecture only!) |
 | iOS Deployment Target | 15.1+ |
 | Android minSdk | 28+ |
 | Xcode | 16.2+ (for iOS development) |
 
-Ideally rn >=0.83.2 and expo SDK 55+
-Lower versions may work but will not be tested or supported.
+## Installation
 
-### Firebase Integration
+```bash
+npm install @psync/notifee
+```
 
-If using Firebase Cloud Messaging with Notifee, see the [Firebase Migration Guide](./FIREBASE_MIGRATION_v14_to_v23.md) for upgrading from v14 to v23.
+```bash
+yarn add @psync/notifee
+```
 
-**Note**: Firebase Dynamic Links has been deprecated and removed. Migrate to Universal Links (iOS) and App Links (Android) for deep linking functionality.
-
----
+```bash
+bun add @psync/notifee
+```
 
 ## Documentation
 
-- [Overview](https://docs.page/invertase/notifee/react-native/overview)
-- [Reference](https://docs.page/invertase/notifee/react-native/reference)
+- [Overview](https://notifee.app/react-native/docs/overview)
+- [Reference](https://notifee.app/react-native/reference)
 
 ### Android
 
@@ -56,15 +53,15 @@ The APIs for Android allow for creating rich, styled and highly interactive noti
 
 | Topic                                                                                    |                                                                                                                                   |
 | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [Appearance](https://docs.page/invertase/notifee/react-native/android/appearance)                   | Change the appearance of a notification; icons, colors, visibility etc.                                                           |
-| [Behaviour](https://docs.page/invertase/notifee/react-native/android/behaviour)                     | Customize how a notification behaves when it is delivered to a device; sound, vibration, lights etc.                              |
-| [Channels & Groups](https://docs.page/invertase/notifee/react-native/android/channels)              | Organize your notifications into channels & groups to allow users to control how notifications are handled on their device        |
-| [Foreground Service](https://docs.page/invertase/notifee/react-native/android/foreground-service)   | Long running background tasks can take advantage of an Android Foreground Service to display an on-going, prominent notification. |
-| [Grouping & Sorting](https://docs.page/invertase/notifee/react-native/android/grouping-and-sorting) | Group and sort related notifications in a single notification pane.                                                               |
-| [Interaction](https://docs.page/invertase/notifee/react-native/android/interaction)                 | Allow users to interact with your application directly from the notification, with actions.                                        |
-| [Progress Indicators](https://docs.page/invertase/notifee/react-native/android/progress-indicators) | Show users a progress indicator of an on-going background task, and learn how to keep it updated.                                 |
-| [Styles](https://docs.page/invertase/notifee/react-native/android/styles)                           | Style notifications to show richer content, such as expandable images/text, or message conversations.                             |
-| [Timers](https://docs.page/invertase/notifee/react-native/android/timers)                           | Display counting timers on your notification, useful for on-going tasks such as a phone call, or event time remaining.            |
+| [Appearance](https://notifee.app/react-native/docs/android/appearance)                   | Change the appearance of a notification; icons, colors, visibility etc.                                                           |
+| [Behaviour](https://notifee.app/react-native/docs/android/behaviour)                     | Customize how a notification behaves when it is delivered to a device; sound, vibration, lights etc.                              |
+| [Channels & Groups](https://notifee.app/react-native/docs/android/channels)              | Organize your notifications into channels & groups to allow users to control how notifications are handled on their device        |
+| [Foreground Service](https://notifee.app/react-native/docs/android/foreground-service)   | Long running background tasks can take advantage of an Android Foreground Service to display an on-going, prominent notification. |
+| [Grouping & Sorting](https://notifee.app/react-native/docs/android/grouping-and-sorting) | Group and sort related notifications in a single notification pane.                                                               |
+| [Interaction](https://notifee.app/react-native/docs/android/interaction)                 | Allow users to interact with your application directly from the notification, with actions.                                        |
+| [Progress Indicators](https://notifee.app/react-native/docs/android/progress-indicators) | Show users a progress indicator of an on-going background task, and learn how to keep it updated.                                 |
+| [Styles](https://notifee.app/react-native/docs/android/styles)                           | Style notifications to show richer content, such as expandable images/text, or message conversations.                             |
+| [Timers](https://notifee.app/react-native/docs/android/timers)                           | Display counting timers on your notification, useful for on-going tasks such as a phone call, or event time remaining.            |
 
 ### iOS
 
@@ -72,12 +69,81 @@ Below you'll find guides that cover the supported iOS features.
 
 | Topic                                                             |                                                                          |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [Appearance](https://docs.page/invertase/notifee/react-native/ios/appearance)           | Change how the notification is displayed to your users.       |
-| [Behaviour](https://docs.page/invertase/notifee/react-native/ios/behaviour)            | Control how notifications behave when they are displayed on a device; sound, crtitial alerts, etc.  |
-| [Categories](https://docs.page/invertase/notifee/react-native/ios/categories) | Create & assign categories to notifications.          |
-| [Interaction](https://docs.page/invertase/notifee/react-native/ios/interaction)                 | Handle user interaction with your notifications. |                                                    |
-| [Permissions](https://docs.page/invertase/notifee/react-native/ios/permissions)                 | Request permission from your application users to display notifications. |                                                    |
+| [Appearance](https://notifee.app/react-native/docs/ios/appearance)           | Change how the notification is displayed to your users.       |
+| [Behaviour](https://notifee.app/react-native/docs/ios/behaviour)            | Control how notifications behave when they are displayed on a device; sound, crtitial alerts, etc.  |
+| [Categories](https://notifee.app/react-native/docs/ios/categories) | Create & assign categories to notifications.          |
+| [Interaction](https://notifee.app/react-native/docs/ios/interaction)                 | Handle user interaction with your notifications. |                                                    |
+| [Permissions](https://notifee.app/react-native/docs/ios/permissions)                 | Request permission from your application users to display notifications. |                                                    |
 
+### Jest Testing
+
+To run jest tests after integrating this module, you will need to mock out the native parts of Notifee or you will get an error that looks like:
+
+```bash
+ ● Test suite failed to run
+
+    Notifee native module not found.
+
+      59 |     this._nativeModule = NativeModules[this._moduleConfig.nativeModuleName];
+      60 |     if (this._nativeModule == null) {
+    > 61 |       throw new Error('Notifee native module not found.');
+         |             ^
+      62 |     }
+      63 |
+      64 |     return this._nativeModule;
+```
+
+Add this to a setup file in your project e.g. `jest.setup.js`:
+
+If you don't already have a Jest setup file configured, please add the following to your Jest configuration file and create the new jest.setup.js file in project root:
+
+```js
+setupFiles: ['<rootDir>/jest.setup.js'],
+```
+
+You can then add the following line to that setup file to mock `notifee`:
+
+```js
+jest.mock('@psync/notifee', () => require('@psync/notifee/jest-mock'))
+```
+
+You will also need to add `@psync/notifee` to `transformIgnorePatterns` in your config file (`jest.config.js`):
+
+```bash
+transformIgnorePatterns: [
+    'node_modules/(?!(jest-)?react-native|@react-native|@psync/notifee)'
+]
+```
+
+### Detox Testing
+
+To utilise Detox's functionality to mock a local notification and trigger notifee's event handlers, you will need a payload with a key `__notifee_notification`:
+
+```js
+{
+  title: 'test',
+  body: 'Body',
+  payload: {
+    __notifee_notification: {
+      ios: {
+        foregroundPresentationOptions: {
+          banner: true,
+          list: true,
+        },
+      },
+      data: {}
+    },
+  },
+}
+```
+
+The important part is to make sure you have a `__notifee_notification` object under `payload` with the default properties.
+
+## Firebase Integration
+
+If using Firebase Cloud Messaging with Notifee, see the [Firebase Migration Guide](./FIREBASE_MIGRATION_v14_to_v23.md) for upgrading from v14 to v23.
+
+**Note**: Firebase Dynamic Links has been deprecated and removed. Migrate to Universal Links (iOS) and App Links (Android) for deep linking functionality.
 
 ## License
 
@@ -85,11 +151,9 @@ Below you'll find guides that cover the supported iOS features.
 
 ---
 
-<p align="center">
-  <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=docs.page">
-    <img width="75px" src="https://static.invertase.io/assets/invertase/invertase-rounded-avatar.png">
-  </a>
-  <p align="center">
-    Built and maintained by <a href="https://invertase.io/?utm_source=readme&utm_medium=footer&utm_campaign=docs.page">Invertase</a>.
+<p>
+  <img align="left" width="50px" src="https://psync.club/favicon.ico">
+  <p align="left">
+    Built by <a href="https://invertase.io">Invertase</a> and maintained with 💖 by <a href="https://psync.club">Psync</a>.
   </p>
 </p>
