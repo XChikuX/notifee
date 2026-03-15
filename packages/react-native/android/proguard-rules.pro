@@ -1,5 +1,4 @@
 -keep class io.invertase.notifee.NotifeeEventSubscriber
--keep class io.invertase.notifee.NotifeeInitProvider
 -keepnames class io.invertase.notifee.NotifeePackage
 -keepnames class io.invertase.notifee.NotifeeApiModule
 
@@ -11,6 +10,20 @@
 -keep class com.facebook.react.ReactHost { *; }
 -keep class * extends com.facebook.react.ReactHost { *; }
 -keepnames class com.facebook.react.ReactActivity
+
+# Bridgeless architecture method members (required for reflection in HeadlessTask)
+-keepclassmembers class com.facebook.react.ReactHost {
+  public com.facebook.react.bridge.ReactContext getCurrentReactContext();
+  public void addReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void removeReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void start();
+}
+
+# ReactInstanceManager methods (required for reflection)
+-keepclassmembers class com.facebook.react.ReactInstanceManager {
+  public com.facebook.react.bridge.ReactContext getCurrentReactContext();
+  public boolean hasActiveCatalystInstance();
+}
 
 # Preserve all annotations.
 -keepattributes *Annotation*
@@ -71,6 +84,12 @@
 # Only required if you use AsyncExecutor
 -keepclassmembers class * extends org.greenrobot.eventbus.util.ThrowableFailureEvent {
     <init>(java.lang.Throwable);
+}
+
+# StatusBarManager reflection (system class for hideNotificationDrawer)
+-keep class android.app.StatusBarManager {
+  public void collapsePanels();
+  public void collapse();
 }
 
 # OkHttp3

@@ -3,7 +3,7 @@
 **Date**: 2026-03-15  
 **Package**: `@psync/notifee`  
 **Target Environment**: Expo SDK 55, React Native 0.83+, Android (R8/ProGuard minified), iOS 15+  
-**Status**: Analysis Complete - Fixes Applied
+**Status**: Analysis Complete - Updates Required
 
 ---
 
@@ -37,8 +37,7 @@ This document provides a comprehensive analysis of potential issues when using N
 The `@KeepForSdk` annotation on `InitProvider` preserves the class but doesn't prevent method finalization by R8. The core library's `InitProvider` is processed as a dependency and its methods become final.
 
 **Solution Applied**:
-1. **Removed `NotifeeInitProvider` entirely** - it's incompatible with R8
-2. **Moved initialization to `NotifeeApiModule` constructor** with thread-safe lazy initialization:
+1. **Moved initialization to `NotifeeApiModule` constructor** with thread-safe lazy initialization:
    ```java
    private static boolean mInitialized = false;
    
@@ -52,12 +51,17 @@ The `@KeepForSdk` annotation on `InitProvider` preserves the class but doesn't p
      }
    }
    ```
-3. **Removed provider declaration** from `AndroidManifest.xml`
+2. **Removed provider declaration** from `packages/react-native/android/src/main/AndroidManifest.xml`
 
-**Impact**: 
-- ✅ Works with R8/ProGuard minification
-- ✅ No behavior change - initialization happens on first module access
-- ✅ Thread-safe with double-checked locking pattern
+**Current Status**: ⚠️ **PARTIAL FIX**
+- ✅ Provider declaration removed from React Native manifest
+- ✅ Initialization moved to `NotifeeApiModule` constructor
+- ⚠️ **File still exists**: `NotifeeInitProvider.java` source file remains in codebase (dead code)
+- ⚠️ **ProGuard rule still references it**: `proguard-rules.pro` line 1 has `-keep class io.invertase.notifee.NotifeeInitProvider`
+
+**Recommended Action**:
+1. Delete `packages/react-native/android/src/main/java/io/invertase/notifee/NotifeeInitProvider.java`
+2. Remove `-keep class io.invertase.notifee.NotifeeInitProvider` from `proguard-rules.pro`
 
 ---
 
@@ -74,19 +78,11 @@ warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecat
 - Removed deprecated `onCatalystInstanceDestroy()` method
 - Added `@Override` annotation to `invalidate()` method (RN 0.74+ compatible)
 
-**Before**:
-```java
-public void onCatalystInstanceDestroy() {
-  invalidate();
-}
+**Current Status**: ✅ **FIXED**
 
-public void invalidate() {
-  NotifeeReactUtils.headlessTaskManager.stopAllTasks();
-}
-```
-
-**After**:
+**Verified Code** (lines 47-51):
 ```java
+// This method was added in react-native 0.74 as a replacement for onCatalystInstanceDestroy
 @Override
 public void invalidate() {
   NotifeeReactUtils.headlessTaskManager.stopAllTasks();
@@ -97,27 +93,22 @@ public void invalidate() {
 
 ### 3. AndroidManifest.xml Deprecated Package Attribute (MEDIUM)
 
-**File**: `packages/react-native/android/src/main/AndroidManifest.xml`
-
 **Problem**:
 ```
 Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported
 ```
 
-**Solution Applied**:
-- Removed `package="io.invertase.notifee"` attribute from manifest
-- Namespace is already defined in `build.gradle` via `namespace` property
+**Files Affected**:
+| File | Status | Current State |
+|------|--------|---------------|
+| `packages/react-native/android/src/main/AndroidManifest.xml` | ✅ **FIXED** | Empty manifest, no package attribute |
+| `android/src/main/AndroidManifest.xml` | ⚠️ **NOT FIXED** | Still has `package="app.notifee.core"` on line 2 |
+| `packages/flutter/packages/notifee/android/src/main/AndroidManifest.xml` | ⚠️ **NOT FIXED** | Still has `package="io.flutter.plugins.notifee"` |
 
-**Before**:
-```xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="io.invertase.notifee">
-```
-
-**After**:
-```xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-```
+**Recommended Action**:
+Remove `package` attribute from:
+1. `android/src/main/AndroidManifest.xml` (line 2)
+2. `packages/flutter/packages/notifee/android/src/main/AndroidManifest.xml` (line 2)
 
 ---
 
@@ -178,47 +169,70 @@ Could not find any matches for app.notifee:core:+ as no versions of app.notifee:
 **File**: `android/src/main/AndroidManifest.xml`
 
 **Current Receivers**:
-- `RebootBroadcastReceiver` - Handles `BOOT_COMPLETED` (exported="false")
-- `AlarmPermissionBroadcastReceiver` - Handles `SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` (exported="true")
-- `NotificationAlarmReceiver` - Handles alarm intents (exported="false")
-- `BlockStateBroadcastReceiver` - Handles notification block state changes (exported="false")
+| Receiver | Exported | Risk Level |
+|----------|----------|------------|
+| `RebootBroadcastReceiver` | `false` | ✅ Low |
+| `AlarmPermissionBroadcastReceiver` | `true` | ⚠️ **HIGH** |
+| `NotificationAlarmReceiver` | `false` | ✅ Low |
+| `BlockStateBroadcastReceiver` | `false` | ✅ Low |
 
 **Risk**: 
-- `AlarmPermissionBroadcastReceiver` is exported="true" - potential security concern
-- Some OEMs (Xiaomi, OPPO) aggressively kill apps and may not deliver broadcasts
+- `AlarmPermissionBroadcastReceiver` is `exported="true"` without a `permission` attribute
+- Any app on the device can send fake "exact alarm permission changed" broadcasts
+- Could trigger unintended notification rescheduling logic
 
 **Recommendation**:
-- Review if `exported="true"` is necessary for `AlarmPermissionBroadcastReceiver`
-- Consider adding `android:directBootAware="true"` for better reliability on modern Android
+```xml
+<receiver
+  android:name=".AlarmPermissionBroadcastReceiver"
+  android:exported="true"
+  android:permission="android.permission.SCHEDULE_EXACT_ALARM">
+  <intent-filter>
+    <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+  </intent-filter>
+</receiver>
+```
 
 ---
 
-### 2. Reflection Usage in HeadlessTask
+### 2. Reflection Usage in HeadlessTask (HIGH RISK)
 
 **File**: `packages/react-native/android/src/main/java/io/invertase/notifee/HeadlessTask.java`
 
-**Code at Risk**:
+**Code at Risk** (lines 267-344):
 ```java
-// Bridgeless architecture detection
-Class<?> entryPoint = Class.forName("com.facebook.react.defaults.DefaultNewArchitectureEntryPoint");
-Method bridgelessEnabled = entryPoint.getMethod("getBridgelessEnabled");
-
-// ReactHost access via reflection
-Method getReactHost = context.getClass().getMethod("getReactHost");
+// Bridgeless architecture - ReactHost method calls via reflection
+Method getCurrentReactContext = reactHost.getClass().getMethod("getCurrentReactContext");
+Method addReactInstanceEventListener = reactHost.getClass().getMethod("addReactInstanceEventListener", ReactInstanceEventListener.class);
+Method removeReactInstanceEventListener = reactHost.getClass().getMethod("removeReactInstanceEventListener", ReactInstanceEventListener.class);
+Method startReactHost = reactHost.getClass().getMethod("start");
 ```
 
 **Risk**:
-- R8/ProGuard may obfuscate class/method names
-- New Architecture classes may change between RN versions
-- Reflection is slower and may fail silently
+- R8 may shrink/rename these methods on `ReactHost` class
+- Current `proguard-rules.pro` keeps the `ReactHost` class but NOT the method members
+- Will cause `NoSuchMethodException` at runtime in Bridgeless mode
 
-**Mitigation**:
-- Classes are already annotated with `@KeepForSdk` in core library
-- Consider adding explicit ProGuard rules for reflection targets
+**Current ProGuard Rules** (insufficient):
+```proguard
+-keep class com.facebook.react.ReactHost { *; }
+-keep class * extends com.facebook.react.ReactHost { *; }
+```
+
+**Recommended Fix** - Add to `proguard-rules.pro`:
+```proguard
+# Bridgeless architecture reflection targets
+-keepclassmembers class com.facebook.react.ReactHost {
+  public com.facebook.react.bridge.ReactContext getCurrentReactContext();
+  public void addReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void removeReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void start();
+}
+```
 
 ---
 
-### 3. StatusBarManager Reflection
+### 3. StatusBarManager Reflection (MEDIUM RISK)
 
 **File**: `packages/react-native/android/src/main/java/io/invertase/notifee/NotifeeReactUtils.java`
 
@@ -232,37 +246,93 @@ collapse.invoke(service);
 
 **Risk**:
 - System API reflection may be blocked on some Android versions
-- Method name "collapsePanels" could be obfuscated by OEM skins
+- OEM skins may have different method names
+- Feature fails silently (wrapped in try-catch)
 
-**Recommendation**:
-- Wrap in try-catch (already done)
-- Consider using official NotificationManager APIs where possible
+**Mitigation**:
+- Already wrapped in try-catch
+- Consider adding ProGuard rule for safety:
+```proguard
+# StatusBarManager reflection (system class, usually safe)
+-keep class android.app.StatusBarManager {
+  public void collapsePanels();
+  public void collapse();
+}
+```
 
 ---
 
-### 4. KeepForSdk Annotation Effectiveness
+### 4. KeepForSdk Annotation Definition (MEDIUM RISK)
 
 **File**: `android/src/main/java/app/notifee/core/KeepForSdk.java`
 
 **Current Definition**:
 ```java
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
-public @interface KeepForSdk {
-}
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Documented
+public @interface KeepForSdk {}
 ```
 
 **Issue**:
-- `@Retention(RetentionPolicy.CLASS)` means annotation is not available at runtime
-- R8 may not recognize this custom annotation for keeping rules
+- **No `@Retention` annotation** - defaults to `RetentionPolicy.CLASS`
+- R8 may not reliably recognize this annotation without explicit rules
+
+**Current ProGuard Rules** (already present):
+```proguard
+-keep @interface app.notifee.core.KeepForSdk
+-keep @app.notifee.core.KeepForSdk class *
+-keepclasseswithmembers class * {
+  @app.notifee.core.KeepForSdk <fields>;
+}
+-keepclasseswithmembers class * {
+  @app.notifee.core.KeepForSdk <methods>;
+}
+```
 
 **Recommendation**:
-- Add ProGuard/R8 rule: `-keep @app.notifee.core.KeepForSdk class * { *; }`
-- Consider using AndroidX `@Keep` annotation instead
+Add explicit retention for better R8 compatibility:
+```java
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Documented
+public @interface KeepForSdk {}
+```
 
 ---
 
-### 5. WorkManager Integration
+### 5. ForegroundService Type Limitations (MEDIUM RISK)
+
+**File**: `android/src/main/AndroidManifest.xml` (line 31-34)
+
+**Current Configuration**:
+```xml
+<service
+  android:name=".ForegroundService"
+  android:exported="false"
+  android:foregroundServiceType="shortService" />
+```
+
+**Risk**:
+- `shortService` (Android 14+) has a **3-minute timeout**
+- System will kill the service if headless task exceeds this limit
+- No fallback for longer-running notification processing
+
+**Recommendation**:
+Consider offering configurable service types or documenting the limitation:
+```xml
+<!-- For longer tasks, consider: dataSync, specialUse, or remoteMessaging -->
+<service
+  android:name=".ForegroundService"
+  android:exported="false"
+  android:foregroundServiceType="dataSync" />
+```
+
+---
+
+### 6. WorkManager Integration (LOW RISK)
 
 **File**: `android/src/main/java/app/notifee/core/Worker.java`
 
@@ -272,7 +342,7 @@ public @interface KeepForSdk {
 
 **Mitigation**:
 - Already annotated with `@KeepForSdk`
-- Ensure ProGuard rules include WorkManager classes
+- ProGuard rules include WorkManager classes
 
 ---
 
@@ -366,45 +436,129 @@ public static boolean isBridgelessArchitectureEnabled() {
 
 ## Recommended ProGuard/R8 Rules
 
-Add to `android/app/proguard-rules.pro`:
+**Current rules in `packages/react-native/android/proguard-rules.pro`** need updates:
 
 ```proguard
-# Notifee Core Library
--keep class app.notifee.core.** { *; }
--keep @app.notifee.core.KeepForSdk class * { *; }
--keepclassmembers @app.notifee.core.KeepForSdk class * { *; }
+# ============================================
+# NOTIFEE CORE
+# ============================================
 
-# React Native reflection targets
+# NOTE: Remove this line - NotifeeInitProvider is deprecated
+# -keep class io.invertase.notifee.NotifeeInitProvider
+
+-keep class io.invertase.notifee.NotifeeEventSubscriber
+-keepnames class io.invertase.notifee.NotifeePackage
+-keepnames class io.invertase.notifee.NotifeeApiModule
+
+# ============================================
+# REACT NATIVE REFLECTION TARGETS (CRITICAL)
+# ============================================
+
+# We depend on certain classes to exist under their names for dynamic
+# class-loading to work. We use this to handle new arch / old arch backwards
+# compatibility despite the class names moving around
+-keep class com.facebook.react.defaults.DefaultNewArchitectureEntryPoint { *; }
+-keep class com.facebook.react.ReactApplication { *; }
+-keep class com.facebook.react.ReactHost { *; }
+-keep class * extends com.facebook.react.ReactHost { *; }
+-keepnames class com.facebook.react.ReactActivity
+
+# ADD: Bridgeless architecture method members (required for reflection)
+-keepclassmembers class com.facebook.react.ReactHost {
+  public com.facebook.react.bridge.ReactContext getCurrentReactContext();
+  public void addReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void removeReactInstanceEventListener(com.facebook.react.ReactInstanceEventListener);
+  public void start();
+}
+
+# ADD: ReactInstanceManager methods
 -keepclassmembers class com.facebook.react.ReactInstanceManager {
   public com.facebook.react.bridge.ReactContext getCurrentReactContext();
-}
--keepclassmembers class com.facebook.react.bridge.ReactContext {
   public boolean hasActiveCatalystInstance();
 }
 
-# WorkManager
--keep class androidx.work.** { *; }
--keep class * extends androidx.work.Worker { *; }
+# ============================================
+# KEEP ANNOTATIONS
+# ============================================
 
-# BroadcastReceivers
--keep class * extends android.content.BroadcastReceiver { *; }
+# Preserve all annotations.
+-keepattributes *Annotation*
 
-# ContentProviders
--keep class * extends android.content.ContentProvider { *; }
+# Keep the classes/members we need for client functionality.
+-keep @interface androidx.annotation.Keep
+-keep @androidx.annotation.Keep class *
+-keepclasseswithmembers class * {
+  @androidx.annotation.Keep <fields>;
+}
+-keepclasseswithmembers class * {
+  @androidx.annotation.Keep <methods>;
+}
+
+# Keep the classes/members we need for client functionality.
+-keep @interface app.notifee.core.KeepForSdk
+-keep @app.notifee.core.KeepForSdk class *
+-keepclasseswithmembers class * {
+  @app.notifee.core.KeepForSdk <fields>;
+}
+-keepclasseswithmembers class * {
+  @app.notifee.core.KeepForSdk <methods>;
+}
+
+# ============================================
+# SYSTEM REFLECTION ( StatusBarManager )
+# ============================================
+
+# ADD: StatusBarManager for hideNotificationDrawer
+-keep class android.app.StatusBarManager {
+  public void collapsePanels();
+  public void collapse();
+}
+
+# ============================================
+# LIBRARIES
+# ============================================
+
+# Work Manager
+-keepclassmembers class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+
+# EventBus
+-keepclassmembers class * {
+    @org.greenrobot.eventbus.Subscribe <methods>;
+}
+-keep enum org.greenrobot.eventbus.ThreadMode { *; }
+
+# Only required if you use AsyncExecutor
+-keepclassmembers class * extends org.greenrobot.eventbus.util.ThrowableFailureEvent {
+    <init>(java.lang.Throwable);
+}
+
+# OkHttp3
+-dontwarn okio.**
+-dontwarn okhttp3.**
+-dontwarn javax.annotation.**
+-dontwarn org.conscrypt.**
+# A resource is loaded with a relative path so the package of this class must be preserved.
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 ```
 
 ---
 
-## Summary of Changes Made
+## Summary of Issues & Status
 
-| File | Issue | Status |
-|------|-------|--------|
-| `NotifeeInitProvider.java` | Both `onCreate()` and `attachInfo()` final after R8 | ✅ **FIXED** - Removed provider, moved init to module constructor |
-| `NotifeeApiModule.java` | Deprecated `onCatalystInstanceDestroy()` | ✅ **FIXED** - Removed, added `@Override` to `invalidate()` |
-| `AndroidManifest.xml` | Deprecated `package` attribute | ✅ **FIXED** - Removed attribute |
-| `android/build.gradle` | Java 21 vs 17 version mismatch | ✅ **FIXED** - Changed to Java 17 |
-| `.npmignore` | Missing core AAR in npm package | ✅ **FIXED** - Removed exclusion |
-| `build.gradle` | Missing runtime check for local maven | ✅ **FIXED** - Added conditional repo |
+| File | Issue | Status | Action Required |
+|------|-------|--------|-----------------|
+| `NotifeeInitProvider.java` | Dead code after R8 fix | ⚠️ PARTIAL | Delete file, update proguard-rules.pro |
+| `NotifeeApiModule.java` | Deprecated `onCatalystInstanceDestroy()` | ✅ FIXED | None |
+| `packages/react-native/.../AndroidManifest.xml` | Deprecated `package` attribute | ✅ FIXED | None |
+| `android/.../AndroidManifest.xml` | Deprecated `package` attribute | ⚠️ NOT FIXED | Remove `package="app.notifee.core"` |
+| `packages/flutter/.../AndroidManifest.xml` | Deprecated `package` attribute | ⚠️ NOT FIXED | Remove `package="io.flutter.plugins.notifee"` |
+| `android/build.gradle` | Java 21 vs 17 version mismatch | ✅ FIXED | None |
+| `.npmignore` | Missing core AAR in npm package | ✅ FIXED | None |
+| `proguard-rules.pro` | Missing ReactHost method members | ⚠️ INCOMPLETE | Add method keep rules |
+| `AlarmPermissionBroadcastReceiver` | Exported without permission | ⚠️ SECURITY RISK | Add permission attribute |
+| `ForegroundService` | shortService 3-min timeout | ⚠️ LIMITATION | Document or make configurable |
 
 ---
 
@@ -418,6 +572,8 @@ Add to `android/app/proguard-rules.pro`:
    - [ ] Test trigger notifications after device reboot
    - [ ] Test foreground service on Android 14+
    - [ ] Test with `shrinkResources true`
+   - [ ] Test headless tasks in Bridgeless mode (reflection)
+   - [ ] Test on Xiaomi/OPPO devices (aggressive process killing)
 
 2. **iOS**:
    - [ ] Build with Xcode 16.2+
@@ -439,9 +595,10 @@ Add to `android/app/proguard-rules.pro`:
 - [Expo SDK 55 Release Notes](https://docs.expo.dev/versions/latest/)
 - [React Native 0.74+ Migration Guide](https://reactnative.dev/docs/new-architecture-intro)
 - [Android 14 Behavior Changes](https://developer.android.com/about/versions/14/behavior-changes-14)
+- [Android 14 Foreground Service Types](https://developer.android.com/about/versions/14/changes/fgs-types-required)
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 2.0  
 **Last Updated**: 2026-03-15  
 **Maintainer**: Psync Dev Team
