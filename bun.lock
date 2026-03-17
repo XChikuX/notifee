@@ -51,7 +51,7 @@
     },
     "packages/react-native": {
       "name": "@psync/notifee",
-      "version": "9.2.0",
+      "version": "9.2.6",
       "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^8.57.0",
         "@typescript-eslint/parser": "^8.57.0",
@@ -76,6 +76,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@psync/notifee": "workspace:*",
+        "@react-native/gradle-plugin": "0.83.4",
         "react": "^19.0.0",
         "react-native": "~0.83.2",
       },
