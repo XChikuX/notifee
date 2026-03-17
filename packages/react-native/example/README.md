@@ -15,7 +15,7 @@
 
 * `git clone https://github.com/invertase/notifee.git`
 * `cd packages/react-native/example`
-* `yarn`
+* `bun`
 
 ## Running Android
 
@@ -33,7 +33,7 @@
 
 ## Troubleshooting
 
-* If things don't work, clean up your build and node_modules folders, `yarn install` and rebuild.
+* If things don't work, clean up your build and node_modules folders, `bun install` and rebuild.
 
 ## How to use
 
