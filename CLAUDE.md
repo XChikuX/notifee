@@ -14,7 +14,7 @@ notifee/
 ├── ios/                        # Core iOS native implementation (Obj-C/C++)
 ├── packages/
 │   ├── react-native/           # Main React Native package (@psync/notifee)
-│   │   └── example/            # An example folder to see if the app works (HAS MAJOR ISSUES WITH GRADLE 9.0.0)
+│   │   └── example/            # React Native example app
 │   └── flutter/                # Flutter bindings (ignore for now)
 ├── tests_react_native/         # E2E test suite
 ├── docs/                       # TypeDoc-generated documentation
@@ -41,8 +41,10 @@ bunx <binary>
 **Prerequisites:**
 - Bun 1.3.10+
 - Node.js 24+
-- Java 21 (for Android)
-- Xcode (for iOS, macOS only)
+- Java 21 (for Android, SDK 55 still compiles to JAVA_17)
+- Xcode 16.2+ (for iOS, macOS only)
+- Android SDK (API 36+)
+- Android NDK (27.1.12297006+)
 
 **Install dependencies:**
 
@@ -54,23 +56,60 @@ bun install
 
 ```bash
 bun run build:core
+
+# 4. Build React Native package
+bun run build:rn
+
+# 5. Run tests
+bun run test:all
+
+# 6. Start example app for testing
+cd packages/react-native/example
+npx react-native start
 ```
 
-**Watch mode for development:**
+### Before Publishing
 
 ```bash
 cd packages/react-native && bun run build:watch
 ```
 
-## Common Commands
+## Environment Variables
 
-| Command | Description |
-|---------|-------------|
-| `bun run build:core` | Build the core TypeScript package |
-| `bun run gen:reference` | Generate TypeDoc API reference |
-| `bun run validate:all:js` | ESLint check |
-| `bun run validate:all:ts` | TypeScript type check |
-| `cd packages/react-native && bun run build` | Build the published package |
+```bash
+# Android SDK location
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018
+
+# Java (if using non-default version)
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-21.jdk/Contents/Home
+```
+
+## Scripts Reference
+
+### Root Package Scripts
+
+- `build:core` - Build Android & iOS core libraries
+- `build:rn` - Build React Native package
+- `build:all` - Build everything
+- `test:all` - Run all tests
+- `prepare` - Prepare for publishing
+- `precommit` - Run full pre-commit checks
+
+### React Native Package Scripts
+
+- `build` - Build TypeScript to dist/
+- `build:watch` - Build with watch mode
+- `test` - Run unit tests
+- `format:android` - Format Java code
+- `format:ios` - Format Objective-C/C++ code
+
+### Example App Scripts
+
+- `android` - Run on Android
+- `ios` - Run on iOS
+- `start` - Start Metro bundler
+```
 
 ## NPM Publishing
 
@@ -103,7 +142,7 @@ token = "$NPM_ACCESS_TOKEN"
 ```bash
 # Build the package first
 cd packages/react-native
-PATH="/path/to/notifee/node_modules/.bin:$PATH" bunx genversion --es6 --semi src/version.ts && tsc
+bun run build
 
 # Then publish
 cd packages/react-native

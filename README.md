@@ -47,6 +47,63 @@ bun add @psync/notifee
 - [Overview](https://notifee.app/react-native/docs/overview)
 - [Reference](https://notifee.app/react-native/reference)
 
+## Development
+
+This is a monorepo managed with Bun workspaces. See [CLAUDE.md](./CLAUDE.md) for detailed development instructions.
+
+### Quick Start for Development
+
+```bash
+# Clone and setup
+git clone https://github.com/New-Elysium/notifee.git
+cd notifee
+bun install
+
+# Build core libraries
+bun run build:core
+
+# Build React Native package
+bun run build:rn
+
+# Run tests
+bun run test:all
+
+# Run example app
+cd packages/react-native/example
+bun install --ignore-scripts
+npx react-native run-android  # or run-ios
+```
+
+### Available Scripts
+
+```bash
+# Core builds
+bun run build:core              # Build Android & iOS core libraries
+bun run build:core:android      # Build Android core only
+bun run build:core:ios          # Build iOS core only
+
+# React Native builds
+bun run build:rn                # Build React Native package
+bun run build:rn:watch          # Build with watch mode
+
+# Testing
+bun run test:all                # Run all tests
+bun run test:unit               # Run unit tests only
+bun run test:e2e                # Run E2E tests
+
+# Example apps
+cd packages/react-native/example && npx react-native run-android
+cd packages/react-native/example && npx react-native run-ios
+
+# Publishing (after fully building)
+npm login
+npm publish                     # in ./packages/react-native/
+```
+
+### Troubleshooting
+
+If you encounter build issues, see [EXAMPLE_APP_GRADLE_TRIAGE.md](./EXAMPLE_APP_GRADLE_TRIAGE.md) for common Android Gradle configuration fixes.
+
 ### Android
 
 The APIs for Android allow for creating rich, styled and highly interactive notifications. Below you'll find guides that cover the supported Android features.
