@@ -34,6 +34,10 @@ public class NotifeeApiModule extends ReactContextBaseJavaModule implements Perm
     // Lazy initialization - works with R8 since we can't override final methods in ContentProvider
     synchronized (NotifeeApiModule.class) {
       if (!mInitialized) {
+        // Set application context before initializing so ContextHolder is never null.
+        // Notifee.setApplicationContext() is @KeepForSdk – safe to call from outside the core even
+        // after R8 minification of the core AAR.
+        Notifee.setApplicationContext(reactContext);
         Notifee.initialize(new NotifeeEventSubscriber());
         mInitialized = true;
       }

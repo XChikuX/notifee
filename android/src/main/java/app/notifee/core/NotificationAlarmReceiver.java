@@ -27,6 +27,9 @@ import android.content.Intent;
 public class NotificationAlarmReceiver extends BroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
+    if (ContextHolder.getApplicationContext() == null) {
+      ContextHolder.setApplicationContext(context.getApplicationContext());
+    }
     new NotifeeAlarmManager().displayScheduledNotification(intent.getExtras());
   }
 }

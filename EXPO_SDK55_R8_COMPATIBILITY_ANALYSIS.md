@@ -3,7 +3,7 @@
 **Date**: 2026-03-15  
 **Package**: `@psync/notifee`  
 **Target Environment**: Expo SDK 55, React Native 0.83+, Android (R8/ProGuard minified), iOS 15+  
-**Status**: Analysis Complete - Updates Required
+**Status**: Analysis Complete - All Critical Issues Fixed
 
 ---
 
@@ -547,18 +547,35 @@ public static boolean isBridgelessArchitectureEnabled() {
 
 ## Summary of Issues & Status
 
-| File | Issue | Status | Action Required |
-|------|-------|--------|-----------------|
-| `NotifeeInitProvider.java` | Dead code after R8 fix | ⚠️ PARTIAL | Delete file, update proguard-rules.pro |
-| `NotifeeApiModule.java` | Deprecated `onCatalystInstanceDestroy()` | ✅ FIXED | None |
-| `packages/react-native/.../AndroidManifest.xml` | Deprecated `package` attribute | ✅ FIXED | None |
-| `android/.../AndroidManifest.xml` | Deprecated `package` attribute | ⚠️ NOT FIXED | Remove `package="app.notifee.core"` |
-| `packages/flutter/.../AndroidManifest.xml` | Deprecated `package` attribute | ⚠️ NOT FIXED | Remove `package="io.flutter.plugins.notifee"` |
-| `android/build.gradle` | Java 21 vs 17 version mismatch | ✅ FIXED | None |
-| `.npmignore` | Missing core AAR in npm package | ✅ FIXED | None |
-| `proguard-rules.pro` | Missing ReactHost method members | ⚠️ INCOMPLETE | Add method keep rules |
-| `AlarmPermissionBroadcastReceiver` | Exported without permission | ⚠️ SECURITY RISK | Add permission attribute |
-| `ForegroundService` | shortService 3-min timeout | ⚠️ LIMITATION | Document or make configurable |
+### Android
+
+| File | Issue | Status |
+|------|-------|--------|
+| `NotifeeInitProvider.java` | R8 final-method conflict — deleted, init moved to `NotifeeApiModule` constructor | ✅ FIXED |
+| `Notifee.java` | No `@KeepForSdk` method to set `ContextHolder` from outside the core | ✅ FIXED — added `setApplicationContext()` |
+| `NotifeeApiModule.java` | `ContextHolder` never initialized; deprecated `onCatalystInstanceDestroy()` | ✅ FIXED — calls `Notifee.setApplicationContext()` before `initialize()` |
+| `NotificationAlarmReceiver.java` | Context not seeded on alarm fire (unlike other receivers) | ✅ FIXED — sets `ContextHolder` from received context |
+| `NotifeeReactUtils.java` | `hasActiveCatalystInstance()` always `false` in bridgeless New Architecture | ✅ FIXED — skips guard when bridgeless is detected |
+| `android/build.gradle` | Duplicate `compileOptions` block; `google-services` plugin applied to core library | ✅ FIXED — removed duplicate block and `apply plugin` |
+| `packages/react-native/android/build.gradle` | `compileSdkVersion = 34` override; Java source/target mismatch (21/17) | ✅ FIXED — `compileSdkVersion = 36`, both set to `VERSION_17` |
+| `packages/react-native/.../AndroidManifest.xml` | Deprecated `package` attribute | ✅ FIXED |
+| `android/.../AndroidManifest.xml` | Deprecated `package` attribute | ✅ FIXED |
+| `packages/flutter/.../AndroidManifest.xml` | Deprecated `package` attribute | ✅ FIXED |
+| `KeepForSdk.java` | Missing explicit `@Retention` | ✅ FIXED — added `@Retention(RetentionPolicy.CLASS)` |
+| `proguard-rules.pro` | Missing ReactHost method members; stale `NotifeeInitProvider` keep rule | ✅ FIXED |
+| `AlarmPermissionBroadcastReceiver` | `exported="true"` without `permission` attribute | ✅ FIXED — added `android:permission="android.permission.SCHEDULE_EXACT_ALARM"` |
+| `ForegroundService` | `shortService` has 3-min timeout on Android 14+ | ⚠️ KNOWN LIMITATION — document for users |
+| WorkManager + FGS | Android 16 enforces runtime quotas on jobs running concurrently with a foreground service (affects `Worker.java` trigger/block-state tasks) | ⚠️ KNOWN LIMITATION — log `WorkInfo.getStopReason()` to detect quota-based stops |
+
+### iOS
+
+| File | Issue | Status |
+|------|-------|--------|
+| `RNNotifee.podspec` | Deployment target `10.0` | ✅ FIXED — updated to `15.1` |
+| `RNNotifeeCore.podspec` | Deployment target `10.0` | ✅ FIXED — updated to `15.1` |
+| `ios/NotifeeCore.xcodeproj` | `IPHONEOS_DEPLOYMENT_TARGET = 10.0` in both Debug and Release configs | ✅ FIXED — updated to `15.1` |
+| `ios/NotifeeCore.podspec` | Deployment target | ✅ Already at `15.1` |
+| New Architecture (TurboModule) | iOS module still uses legacy `RCTEventEmitter`/`RCTBridgeModule` | ⚠️ KNOWN — works via RN compatibility bridge shim in Expo SDK 55 |
 
 ---
 
@@ -566,26 +583,34 @@ public static boolean isBridgelessArchitectureEnabled() {
 
 ### Pre-Release Checklist
 
-1. **Android**:
+1. **Android — Core AAR rebuild required**:
+   - [ ] Rebuild core AAR after `Notifee.java` and `NotificationAlarmReceiver.java` changes: `cd android && ./gradlew publishAarPublicationToMavenRepository`
    - [ ] Build release AAB with R8 full mode: `./gradlew bundleRelease`
-   - [ ] Verify minification: check mapping.txt for Notifee classes
-   - [ ] Test trigger notifications after device reboot
-   - [ ] Test foreground service on Android 14+
-   - [ ] Test with `shrinkResources true`
-   - [ ] Test headless tasks in Bridgeless mode (reflection)
-   - [ ] Test on Xiaomi/OPPO devices (aggressive process killing)
+   - [ ] Verify minification output: check `javasource.map` for kept Notifee classes
+   - [ ] Confirm `Notifee.setApplicationContext` is present in kept symbols (not renamed)
+   - [ ] Test trigger notifications after **cold app launch** (no prior reboot receiver)
+   - [ ] Test trigger notifications after **device reboot** (alarm rescheduling path)
+   - [ ] Test foreground service on Android 14+ (note 3-min `shortService` limit)
+   - [ ] Test with `shrinkResources true` and `minifyEnabled true`
+   - [ ] Test headless tasks in **Bridgeless (New Architecture)** mode — events previously dropped
+   - [ ] On Android 16+, verify `WorkInfo.getStopReason()` is not returning quota-based stops during headless task + FGS concurrent execution
+   - [ ] Test on Xiaomi / OPPO devices (aggressive process killing)
+   - [ ] Confirm `ContextHolder` is never null in Logcat during fresh install → launch
 
 2. **iOS**:
-   - [ ] Build with Xcode 16.2+
-   - [ ] Test on iOS 18+ device
-   - [ ] Test notification service extension
-   - [ ] Verify badge count updates
+   - [ ] Run `pod install` and confirm `IPHONEOS_DEPLOYMENT_TARGET = 15.1` in generated workspace
+   - [ ] Build with Xcode 16.2+, deployment target 15.1
+   - [ ] Test on iOS 18+ device and iOS 15 device (minimum target)
+   - [ ] Test Notification Service Extension with `RNNotifeeCore` podspec
+   - [ ] Verify badge count, foreground presentation options, trigger notifications
+   - [ ] Confirm no `RCTBridgeModule` deprecation warnings break the build
 
 3. **Expo EAS**:
-   - [ ] Run `eas build --platform android --local`
-   - [ ] Install AAB on physical device
-   - [ ] Verify all notification features work
-   - [ ] Check Logcat for any R8-related warnings
+   - [ ] Run `eas build --platform android --local` with full R8 minification
+   - [ ] Install AAB on physical device via `adb install`
+   - [ ] Verify all notification features work end-to-end
+   - [ ] Check Logcat for `ContextHolder`, `HeadlessTask`, `SEND_EVENT` tags
+   - [ ] Run `eas build --platform ios` and test on TestFlight
 
 ---
 
@@ -596,9 +621,14 @@ public static boolean isBridgelessArchitectureEnabled() {
 - [React Native 0.74+ Migration Guide](https://reactnative.dev/docs/new-architecture-intro)
 - [Android 14 Behavior Changes](https://developer.android.com/about/versions/14/behavior-changes-14)
 - [Android 14 Foreground Service Types](https://developer.android.com/about/versions/14/changes/fgs-types-required)
+- [RN New Architecture — Bridgeless Mode](https://reactnative.dev/docs/the-new-architecture/landing-page)
+- [Android 16 Behavior Changes (All Apps)](https://developer.android.com/about/versions/16/behavior-changes-all)
+- [Android 16 Behavior Changes (Targeting API 36)](https://developer.android.com/about/versions/16/behavior-changes-16)
+- [Android 16 FGS Changes](https://developer.android.com/develop/background-work/services/fgs/changes)
+- [16 KB Page Size Support](https://developer.android.com/guide/practices/page-sizes)
 
 ---
 
-**Document Version**: 2.0  
-**Last Updated**: 2026-03-15  
+**Document Version**: 3.1  
+**Last Updated**: 2026-03-17  
 **Maintainer**: Psync Dev Team

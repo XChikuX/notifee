@@ -97,7 +97,17 @@ class NotifeeReactUtils {
     try {
       ReactContext reactContext = getReactContext(EventSubscriber.getContext());
 
-      if (reactContext == null || !reactContext.hasActiveCatalystInstance()) {
+      if (reactContext == null) {
+        return;
+      }
+
+      // hasActiveCatalystInstance() is deprecated in RN 0.74 and always returns false in the
+      // New Architecture (bridgeless) mode used by default in RN 0.83 / Expo SDK 55.
+      // In bridgeless there is no Catalyst instance, so we skip that guard and let the
+      // getJSModule() call proceed – it is already wrapped in a try/catch, so any failure
+      // during a transient startup window is handled gracefully.
+      if (!HeadlessTask.isBridgelessArchitectureEnabled()
+          && !reactContext.hasActiveCatalystInstance()) {
         return;
       }
 

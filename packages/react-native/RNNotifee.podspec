@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.social_media_url    = 'http://twitter.com/notifee_app'
 
   s.cocoapods_version        = '>= 1.10.0'
-  s.ios.deployment_target   = '10.0'
+  s.ios.deployment_target   = '15.1'
 
   s.dependency 'React-Core'
   s.source_files =  ['ios/RNNotifee/NotifeeApiModule.h', 'ios/RNNotifee/NotifeeApiModule.m']
@@ -36,4 +36,3 @@ Pod::Spec.new do |s|
   end
 
 end
-

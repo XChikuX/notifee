@@ -78,6 +78,21 @@ public class Notifee {
     return ContextHolder.getApplicationContext();
   }
 
+  /**
+   * Sets the application context on ContextHolder so that all core subsystems (AlarmManager,
+   * WorkManager, EventSubscriber, etc.) have a valid Context even before any ContentProvider
+   * auto-initialises. Must be called with a Context before {@link #initialize(EventListener)}.
+   *
+   * <p>Safe to call multiple times – a non-null context is never overwritten.
+   */
+  @KeepForSdk
+  public static void setApplicationContext(@NonNull Context context) {
+    if (ContextHolder.getApplicationContext() == null) {
+      ContextHolder.setApplicationContext(
+          context.getApplicationContext() != null ? context.getApplicationContext() : context);
+    }
+  }
+
   @KeepForSdk
   public static void initialize(@Nullable EventListener eventListener) {
     synchronized (Notifee.class) {

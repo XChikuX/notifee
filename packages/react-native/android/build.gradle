@@ -76,7 +76,7 @@ android {
     abortOnError false
   }
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_21
+    sourceCompatibility JavaVersion.VERSION_17
     targetCompatibility JavaVersion.VERSION_17
   }
   buildTypes {
@@ -84,7 +84,7 @@ android {
       consumerProguardFiles 'proguard-rules.pro'
     }
   }
-  compileSdkVersion = 34
+  compileSdkVersion = 36
 }
 
 repositories {

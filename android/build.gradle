@@ -129,11 +129,6 @@ android {
     }
   }
 
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
-  }
-
   testOptions.unitTests.all {
     testLogging {
       events "failed", "skipped"
@@ -158,13 +153,6 @@ repositories {
   maven {
     url("$rootDir/../node_modules/jsc-android/dist")
   }
-  google()
-  mavenCentral()
-}
-
-apply plugin: 'com.google.gms.google-services'
-
-repositories {
   google()
   mavenCentral()
 }
