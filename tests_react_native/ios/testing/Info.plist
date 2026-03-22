@@ -43,10 +43,6 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>FirebaseDynamicLinksCustomDomains</key>
-	<array>
-		<string>https://invertase.io/hire-us</string>
-	</array>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-4406399463942824~1625911479</string>
 	<key>GADDelayAppMeasurementInit</key>

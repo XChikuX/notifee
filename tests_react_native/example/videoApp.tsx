@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-present Invertase Limited
+ * Copyright (c) 2016-present Invertase Limited
  */
 
 import React, { useEffect } from 'react';
@@ -13,62 +13,58 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-import firebase from '@react-native-firebase/app';
-import { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import { 
+  FirebaseMessagingTypes, 
+  getMessaging, 
+  getToken, 
+  onMessage as onFirebaseMessage,
+  setBackgroundMessageHandler
+} from '@react-native-firebase/messaging';
 
-import Notifee, { EventType, Event, AuthorizationStatus } from '@psync/notifee';
+import Notifee, { EventType, Event, AuthorizationStatus, Notification } from '@psync/notifee';
 
 type RemoteMessage = FirebaseMessagingTypes.RemoteMessage;
 
+// 1. Handle FCM Messages
 async function onMessage(message: RemoteMessage): Promise<void> {
   console.log('New FCM Message', message);
 
-  if (message.data) {
-    Notifee.displayNotification(JSON.parse(message.data?.notifee));
+if (message.data?.notifee) {
+    // FIX: Check if it's a string before parsing, otherwise use it directly
+    const notifeeData = typeof message.data.notifee === 'string' 
+      ? JSON.parse(message.data.notifee) 
+      : message.data.notifee;
+      
+    await Notifee.displayNotification(notifeeData as Notification);
   }
 }
 
-// @ts-ignore FIXME what is Root and why doesn't typescript like it?
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Root(): any {
-  // const [id, setId] = React.useState<string | null>(null);
+// Get the messaging instance for the background handler
+const messaging = getMessaging();
 
-  async function init(): Promise<void> {
-    const fcmToken = await firebase.messaging().getToken();
-    console.log({ fcmToken });
-    firebase.messaging().onMessage(onMessage);
+// 2. Register FCM Background Handler (Required for background/quit states)
+setBackgroundMessageHandler(messaging, async (message) => {
+  console.log('Message handled in the background!', message);
+  if (message.data?.notifee) {
+    const notifeeData = typeof message.data.notifee === 'string' 
+      ? JSON.parse(message.data.notifee) 
+      : message.data.notifee;
+
+    await Notifee.displayNotification(notifeeData as Notification);
   }
+});
 
-  const styles = StyleSheet.create({
-    container: {
-      height: Dimensions.get('window').height,
-    },
-    body: {
-      flex: 1,
-      justifyContent: 'center',
-      alignContent: 'center',
-      flexDirection: 'column',
-      alignItems: 'center',
-      textAlign: 'center',
-    },
-    imageContainer: { justifyContent: 'center', alignContent: 'center', marginBottom: 60 },
-    logo: {
-      width: 100,
-      height: 100,
-    },
-    button: {
-      justifyContent: 'center',
-      alignContent: 'center',
-    },
-    titleText: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      textAlign: 'center',
-    },
-    alertText: {
-      color: '#2c8be6',
-    },
-  });
+// 3. Export the component and use the correct React return type
+export default function Root(): React.JSX.Element {
+  
+  async function init(): Promise<void> {
+    const messaging = getMessaging();
+    const fcmToken = await getToken(messaging);
+    console.log({ fcmToken });
+    
+    // Listen for foreground FCM messages
+    onFirebaseMessage(messaging, onMessage);
+  }
 
   useEffect(() => {
     init().catch(console.error);
@@ -78,36 +74,37 @@ function Root(): any {
     <ScrollView style={[styles.container]} contentContainerStyle={styles.body}>
       <View style={styles.body}>
         <View style={styles.imageContainer}>
+          {/* Ensure this path is correct for your project structure */}
           <Image style={styles.logo} source={require('../assets/notifee-logo.png')} />
           <Text style={styles.titleText}>Notifee</Text>
         </View>
+        
         <TouchableOpacity
           onPress={async (): Promise<void> => {
             const currentPermissions = await Notifee.getNotificationSettings();
             if (currentPermissions.authorizationStatus !== AuthorizationStatus.AUTHORIZED) {
               await Notifee.requestPermission();
             }
-            Notifee.displayNotification({
-              // @ts-ignore FIXME what is key and why doesn't typescript like this line?
-              key: 'Big Picture Style',
-              notification: {
-                title: 'Big Picture Style',
-                body: 'Expand for a cat',
-                ios: {
-                  attachments: [
-                    {
-                      id: 'image',
-                      url: 'https://github.githubassets.com/images/modules/open_graph/github-mark.png',
-                      thumbnailHidden: false,
-                      thumbnailClippingRect: {
-                        x: 0.1,
-                        y: 0.1,
-                        width: 0.1,
-                        height: 0.1,
-                      },
+            
+            // 4. Fixed Payload: Flattened the object and changed 'key' to 'id'
+            await Notifee.displayNotification({
+              id: 'big-picture-style',
+              title: 'Big Picture Style',
+              body: 'Expand for a cat',
+              ios: {
+                attachments: [
+                  {
+                    id: 'image',
+                    url: 'https://github.githubassets.com/images/modules/open_graph/github-mark.png',
+                    thumbnailHidden: false,
+                    thumbnailClippingRect: {
+                      x: 0.1,
+                      y: 0.1,
+                      width: 0.1,
+                      height: 0.1,
                     },
-                  ],
-                },
+                  },
+                ],
               },
             });
             // Alert.alert(
@@ -130,7 +127,6 @@ function Root(): any {
           }}
         >
           <View style={styles.button}>
-            {/* eslint-disable-next-line react-native/no-inline-styles */}
             <Text style={{ color: '#2c8be6' }}>Display Notification</Text>
           </View>
         </TouchableOpacity>
@@ -138,6 +134,24 @@ function Root(): any {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { height: Dimensions.get('window').height },
+  body: {
+    flex: 1,
+    justifyContent: 'center',
+    alignContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+  },
+  imageContainer: { justifyContent: 'center', alignContent: 'center', marginBottom: 60 },
+  logo: { width: 100, height: 100 },
+  button: { justifyContent: 'center', alignContent: 'center' },
+  titleText: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
+});
+
+// --- Event Logging & Background Services ---
 
 function logEvent(state: string, event: any): void {
   const { type, detail } = event;

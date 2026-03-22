@@ -1,11 +1,13 @@
 import { AppRegistry } from 'react-native';
-import '@react-native-firebase/messaging';
-import firebase from '@react-native-firebase/app';
 import notifee from '@psync/notifee';
+import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
 
 import App from './example/app';
 
-firebase.messaging().setBackgroundMessageHandler(async message => {
+// Initialize messaging instance
+const messaging = getMessaging();
+
+setBackgroundMessageHandler(messaging, async message => {
   console.log('onBackgroundMessage New FCM Message', message);
 });
 

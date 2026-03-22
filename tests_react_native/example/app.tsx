@@ -7,15 +7,13 @@ import {
   Alert,
   AppRegistry,
   Button,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
-import firebase from '@react-native-firebase/app';
-import '@react-native-firebase/messaging';
+import { getMessaging, getToken, onMessage as onFirebaseMessage } from '@react-native-firebase/messaging';
 
 import Notifee, {
   AndroidChannel,
@@ -93,9 +91,10 @@ function Root(): any {
   const [id, _] = React.useState<string | null>(null);
 
   async function init(): Promise<void> {
-    const fcmToken = await firebase.messaging().getToken();
+    const messaging = getMessaging();
+    const fcmToken = await getToken(messaging);
     console.log({ fcmToken });
-    firebase.messaging().onMessage(onMessage);
+    onFirebaseMessage(messaging, onMessage);
 
     const initialNotification = await Notifee.getInitialNotification();
     console.log('init: ', { initialNotification });
@@ -214,7 +213,7 @@ function Root(): any {
   }
 
   return (
-    <SafeAreaView style={[styles.container]}>
+    <View style={[styles.container]}>
       <ScrollView style={[styles.container]}>
         <View>
           <Button
@@ -346,7 +345,7 @@ function Root(): any {
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
