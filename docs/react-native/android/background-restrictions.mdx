@@ -105,3 +105,24 @@ For example, a Samsung device on Android 10, the user will be navigated to the B
 ## Testing
 
 It's possible to test your app under a variety of conditions to see how your notifications behave with several [adb commands](https://developer.android.com/about/versions/pie/power#testing). For example, run `adb shell settings put global low_power 1` to test your app while the device/emulator has low power.
+
+## Exact Alarm Permissions (Android 12+)
+
+Starting with Android 12 (API level 31), apps need the `SCHEDULE_EXACT_ALARM` permission to schedule exact alarms. If the permission is not granted and the app attempts to schedule an exact alarm, the trigger notification will not be scheduled.
+
+Notifee checks for this permission before scheduling exact alarms and logs a warning if it is missing. To check and request the permission:
+
+```js
+import notifee from '@psync/notifee';
+
+// Check if the app can schedule exact alarms
+const settings = await notifee.getNotificationSettings();
+// On Android 12+, guide users to the alarm & reminders settings if needed
+await notifee.openAlarmPermissionSettings();
+```
+
+## Timezone and DST Changes
+
+When the device timezone changes or a DST transition occurs, Android may cancel pending `AlarmManager`-based alarms. Notifee automatically reschedules all alarm-based trigger notifications when the system broadcasts `TIMEZONE_CHANGED` or `TIME_SET` events, ensuring that your scheduled notifications continue to fire at the intended wall-clock time.
+
+No additional configuration is needed for this behavior. However, note that repeating notifications use fixed-interval scheduling (e.g. every 24 hours), which means a DST transition may shift the apparent delivery time by the DST offset for interval-based repeats.

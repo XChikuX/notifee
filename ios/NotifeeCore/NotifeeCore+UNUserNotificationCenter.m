@@ -169,8 +169,14 @@ struct {
     // For non-notifee notifications (e.g. plain APNS/FCM) when there is no original delegate,
     // call the completion handler with default presentation options so the notification is
     // still displayed (#1041, #912).
-    completionHandler(UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge |
-                      UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList);
+    UNNotificationPresentationOptions defaultOptions =
+        UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge;
+    if (@available(iOS 14, *)) {
+      defaultOptions |= UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList;
+    } else {
+      defaultOptions |= UNNotificationPresentationOptionAlert;
+    }
+    completionHandler(defaultOptions);
   }
 }
 

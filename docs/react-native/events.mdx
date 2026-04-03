@@ -120,6 +120,18 @@ once complete.
 
 > Please note, for iOS, the `DELIVERED` event is not fired for trigger notifications when the app is in the background.
 
+### Event lifecycle by app state
+
+The following table summarizes which event mechanisms fire in each app state:
+
+| App State | Foreground Event | Background Event | `getInitialNotification` |
+|-----------|-----------------|------------------|--------------------------|
+| Foreground (visible) | ✅ PRESS / ACTION_PRESS / DELIVERED / DISMISSED | — | — |
+| Background (minimized) | — | ✅ PRESS / ACTION_PRESS / DISMISSED | — |
+| Killed / Quit | — | — | ✅ (Android only) |
+
+On **iOS**, `getInitialNotification` is deprecated. The `PRESS` event is delivered via `onForegroundEvent` when the app opens from a notification in any state. On **Android**, cold-start opens are only available through `getInitialNotification`.
+
 ## App open events
 
 If user interaction on a notification has caused your application to open, you may want to obtain the notification which
@@ -129,7 +141,7 @@ which can be called early on in your React lifecycle to obtain the notification 
 > `getInitialNotification` is deprecated on iOS in favour of the `PRESS` event received by the `onForegroundEvent` event handler
 
 It is recommended to always check if a notification has caused your app to open before displaying the main app content.
-Once consumed, the initial notification is removed.
+Once consumed, the initial notification is removed and will not be returned by subsequent calls.
 
 For example, setup a "bootstrap" function inside of the root component of your application:
 

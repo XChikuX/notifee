@@ -18,6 +18,8 @@
 #import <UIKit/UIKit.h>
 #import "NotifeeCore+NSNotificationCenter.h"
 #import "NotifeeCore+UNUserNotificationCenter.h"
+#import "NotifeeCoreDelegateHolder.h"
+#import "NotifeeCoreUtil.h"
 
 @implementation NotifeeCoreNSNotificationCenter
 
@@ -70,7 +72,23 @@
 }
 
 - (void)messaging_didReceiveRemoteNotification:(nonnull NSNotification *)notification {
-  // update me with logic
+  // Forward remote notifications received via React Native Firebase Messaging
+  // to the Notifee event system so they can be handled by onForegroundEvent (#912, #1041).
+  NSDictionary *userInfo = notification.userInfo;
+  if (userInfo == nil) {
+    return;
+  }
+
+  NSDictionary *notifeeNotification = userInfo[kNotifeeUserInfoNotification];
+  if (notifeeNotification != nil) {
+    // Already a notifee notification — post as DELIVERED event
+    [[NotifeeCoreDelegateHolder instance] didReceiveNotifeeCoreEvent:@{
+      @"type" : @(NotifeeCoreEventTypeDelivered),
+      @"detail" : @{
+        @"notification" : notifeeNotification,
+      }
+    }];
+  }
 }
 
 @end
