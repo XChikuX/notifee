@@ -165,6 +165,18 @@ struct {
     [_originalDelegate userNotificationCenter:center
                       willPresentNotification:notification
                         withCompletionHandler:completionHandler];
+  } else {
+    // For non-notifee notifications (e.g. plain APNS/FCM) when there is no original delegate,
+    // call the completion handler with default presentation options so the notification is
+    // still displayed (#1041, #912).
+    UNNotificationPresentationOptions defaultOptions =
+        UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge;
+    if (@available(iOS 14, *)) {
+      defaultOptions |= UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList;
+    } else {
+      defaultOptions |= UNNotificationPresentationOptionAlert;
+    }
+    completionHandler(defaultOptions);
   }
 }
 
@@ -186,74 +198,76 @@ struct {
       [_originalDelegate userNotificationCenter:center
                  didReceiveNotificationResponse:response
                           withCompletionHandler:completionHandler];
+      return;
     } else {
       notifeeNotification =
           [NotifeeCoreUtil parseUNNotificationRequest:response.notification.request];
     }
   }
 
-  if (notifeeNotification != nil) {
-    if ([response.actionIdentifier isEqualToString:UNNotificationDismissActionIdentifier]) {
-      // post DISMISSED event, only triggers if notification has a categoryId
-      [[NotifeeCoreDelegateHolder instance] didReceiveNotifeeCoreEvent:@{
-        @"type" : @(NotifeeCoreEventTypeDismissed),
-        @"detail" : @{
-          @"notification" : notifeeNotification,
-        }
-      }];
-      return;
-    }
-
-    NSNumber *eventType;
-    NSMutableDictionary *event = [NSMutableDictionary dictionary];
-    NSMutableDictionary *eventDetail = [NSMutableDictionary dictionary];
-    NSMutableDictionary *eventDetailPressAction = [NSMutableDictionary dictionary];
-
-    if ([response.actionIdentifier isEqualToString:UNNotificationDefaultActionIdentifier]) {
-      eventType = @1;  // PRESS
-      // event.detail.pressAction.id
-      eventDetailPressAction[@"id"] = @"default";
-    } else {
-      eventType = @2;  // ACTION_PRESS
-      // event.detail.pressAction.id
-      eventDetailPressAction[@"id"] = response.actionIdentifier;
-    }
-
-    if ([response isKindOfClass:UNTextInputNotificationResponse.class]) {
-      // event.detail.input
-      eventDetail[@"input"] = [(UNTextInputNotificationResponse *)response userText];
-    }
-
-    // event.type
-    event[@"type"] = eventType;
-
-    // event.detail.notification
-    eventDetail[@"notification"] = notifeeNotification;
-
-    // event.detail.pressAction
-    eventDetail[@"pressAction"] = eventDetailPressAction;
-
-    // event.detail
-    event[@"detail"] = eventDetail;
-
-    // store notification for getInitialNotification
-    _initialNotification = [eventDetail copy];
-
-    // post PRESS/ACTION_PRESS event
-    // Set is initial notification to true
-    if (_notificationOpenedAppID != nil &&
-        [_initialNoticationID isEqualToString:_notificationOpenedAppID]) {
-      eventDetail[@"initialNotification"] = @1;
-    }
-
-    [[NotifeeCoreDelegateHolder instance] didReceiveNotifeeCoreEvent:event];
-
-    // TODO figure out if this is needed or if we can just complete immediately
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15 * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
-                     completionHandler();
-                   });
+  if (notifeeNotification == nil) {
+    // No notifee data and no original delegate — still must call completionHandler
+    completionHandler();
+    return;
   }
+
+  if ([response.actionIdentifier isEqualToString:UNNotificationDismissActionIdentifier]) {
+    // post DISMISSED event, only triggers if notification has a categoryId
+    [[NotifeeCoreDelegateHolder instance] didReceiveNotifeeCoreEvent:@{
+      @"type" : @(NotifeeCoreEventTypeDismissed),
+      @"detail" : @{
+        @"notification" : notifeeNotification,
+      }
+    }];
+    completionHandler();
+    return;
+  }
+
+  NSNumber *eventType;
+  NSMutableDictionary *event = [NSMutableDictionary dictionary];
+  NSMutableDictionary *eventDetail = [NSMutableDictionary dictionary];
+  NSMutableDictionary *eventDetailPressAction = [NSMutableDictionary dictionary];
+
+  if ([response.actionIdentifier isEqualToString:UNNotificationDefaultActionIdentifier]) {
+    eventType = @1;  // PRESS
+    // event.detail.pressAction.id
+    eventDetailPressAction[@"id"] = @"default";
+  } else {
+    eventType = @2;  // ACTION_PRESS
+    // event.detail.pressAction.id
+    eventDetailPressAction[@"id"] = response.actionIdentifier;
+  }
+
+  if ([response isKindOfClass:UNTextInputNotificationResponse.class]) {
+    // event.detail.input
+    eventDetail[@"input"] = [(UNTextInputNotificationResponse *)response userText];
+  }
+
+  // event.type
+  event[@"type"] = eventType;
+
+  // event.detail.notification
+  eventDetail[@"notification"] = notifeeNotification;
+
+  // event.detail.pressAction
+  eventDetail[@"pressAction"] = eventDetailPressAction;
+
+  // event.detail
+  event[@"detail"] = eventDetail;
+
+  // store notification for getInitialNotification
+  _initialNotification = [eventDetail copy];
+
+  // post PRESS/ACTION_PRESS event
+  // Set is initial notification to true
+  if (_notificationOpenedAppID != nil &&
+      [_initialNoticationID isEqualToString:_notificationOpenedAppID]) {
+    eventDetail[@"initialNotification"] = @1;
+  }
+
+  [[NotifeeCoreDelegateHolder instance] didReceiveNotifeeCoreEvent:event];
+
+  completionHandler();
 }
 
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center

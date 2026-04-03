@@ -15,7 +15,6 @@ notifee/
 ├── packages/
 │   ├── react-native/           # Main React Native package (@psync/notifee)
 │   │   └── example/            # React Native example app
-│   └── flutter/                # Flutter bindings (ignore for now)
 ├── tests_react_native/         # E2E test suite
 ├── docs/                       # TypeDoc-generated documentation
 └── .github/workflows/          # CI/CD pipelines

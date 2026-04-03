@@ -212,3 +212,18 @@ notifee.displayNotification({
 If no [foregroundServiceTypes](/react-native/android/interaction#quick-actions) property is provided, the types are taken from the manifest.
 
 If any permission was granted while running the service, the same notification (with the same notification ID and same channel ID) can be posted again with the new `foregroundServiceTypes` property array with the same notification ID and the current running service will be updated with the new types.
+
+### Background start restrictions (Android 12+)
+
+Starting with Android 12 (API level 31), the system restricts apps from starting foreground services while running in the background. If your app attempts to start a foreground service while in the background, the system will throw a `ForegroundServiceStartNotAllowedException`.
+
+Notifee handles this gracefully by catching the exception and logging an actionable error message rather than crashing your app. However, the foreground service will not start in this case.
+
+To avoid this restriction, ensure that your foreground service is started only when the app is in the foreground, or from an allowed exemption context such as:
+
+- A high-priority Firebase Cloud Messaging (FCM) message
+- A user interaction (e.g. tapping a notification action)
+- An exact alarm callback
+- A system broadcast that grants a temporary exemption
+
+For more details, see the [Android foreground service background-start restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start) documentation.
