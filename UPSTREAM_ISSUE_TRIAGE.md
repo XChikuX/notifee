@@ -42,9 +42,9 @@ These upstream issues still appear relevant to this fork:
 
 ### Issues that do **not** need to be carried over as active problems
 
-- `#1285` maintenance status: this fork is maintained and says so in `/home/runner/work/notifee/notifee/README.md`.
+- `#1285` maintenance status: this fork is maintained and says so in `README.md`.
 - `#1284` JitPack timeout: this fork is set up to use local core artifacts / source integration rather than only relying on remote JitPack resolution.
-- `#1277` release notes missing: this fork includes `/home/runner/work/notifee/notifee/docs/react-native/release-notes.mdx`.
+- `#1277` release notes missing: this fork includes `docs/react-native/release-notes.mdx`.
 - `#1266` Expo gap analysis: useful discussion, but it is not an actionable defect by itself.
 
 ---
@@ -96,18 +96,18 @@ The core event plumbing still uses separate foreground/background/open pathways 
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/packages/react-native/src/NotifeeApiModule.ts`
-- `/home/runner/work/notifee/notifee/packages/react-native/src/index.ts`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationReceiverHandler.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
-- `/home/runner/work/notifee/notifee/docs/react-native/events.mdx`
+- `packages/react-native/src/NotifeeApiModule.ts`
+- `packages/react-native/src/index.ts`
+- `android/src/main/java/app/notifee/core/NotificationReceiverHandler.java`
+- `android/src/main/java/app/notifee/core/Notifee.java`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
+- `docs/react-native/events.mdx`
 
 **Current evidence**
 
-- The public docs still describe a split between background events and `getInitialNotification`: `/home/runner/work/notifee/notifee/docs/react-native/events.mdx`
-- iOS still dispatches through `UNUserNotificationCenterDelegate` interception in `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`.
-- Android still relies on intent-based open handling and a separate initial-notification path in `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java`.
+- The public docs still describe a split between background events and `getInitialNotification`: `docs/react-native/events.mdx`
+- iOS still dispatches through `UNUserNotificationCenterDelegate` interception in `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`.
+- Android still relies on intent-based open handling and a separate initial-notification path in `android/src/main/java/app/notifee/core/Notifee.java`.
 
 **Suggested fix**
 
@@ -142,15 +142,15 @@ Notification payload and press payload travel through different code paths depen
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationPendingIntent.java`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore.m`
+- `android/src/main/java/app/notifee/core/Notifee.java`
+- `android/src/main/java/app/notifee/core/NotificationPendingIntent.java`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
+- `ios/NotifeeCore/NotifeeCore.m`
 
 **Current evidence**
 
-- Android `getInitialNotification` can reconstruct from either a sticky event or current `Activity` intent extras: `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java:447-474`
-- iOS stores `_initialNotification` from the notification response and returns it later: `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:239-246`
+- Android `getInitialNotification` can reconstruct from either a sticky event or current `Activity` intent extras: `android/src/main/java/app/notifee/core/Notifee.java:447-474`
+- iOS stores `_initialNotification` from the notification response and returns it later: `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:239-246`
 
 **Suggested fix**
 
@@ -184,9 +184,9 @@ The current iOS delegate code has behavior that can easily cause gaps:
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:100-168`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:175-255`
-- `/home/runner/work/notifee/notifee/docs/react-native/events.mdx:121-129`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:100-168`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:175-255`
+- `docs/react-native/events.mdx:121-129`
 
 **Suggested fix**
 
@@ -218,10 +218,10 @@ Foreground iOS handling currently special-cases notifications created “through
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:104-168`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+NSNotificationCenter.m`
-- `/home/runner/work/notifee/notifee/docs/react-native/ios/remote-notification-support.mdx`
-- `/home/runner/work/notifee/notifee/docs/react-native/integrations/fcm.mdx`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m:104-168`
+- `ios/NotifeeCore/NotifeeCore+NSNotificationCenter.m`
+- `docs/react-native/ios/remote-notification-support.mdx`
+- `docs/react-native/integrations/fcm.mdx`
 
 **Suggested fix**
 
@@ -251,9 +251,9 @@ The behavior is still documented as intentional in this fork’s own release not
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/docs/react-native/release-notes.mdx:215-218`
-- `/home/runner/work/notifee/notifee/docs/react-native/integrations/fcm.mdx`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
+- `docs/react-native/release-notes.mdx:215-218`
+- `docs/react-native/integrations/fcm.mdx`
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
 
 **Current evidence**
 
@@ -288,8 +288,8 @@ The code still returns from current `Activity` intent extras without clearing th
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java:447-474`
-- `/home/runner/work/notifee/notifee/docs/react-native/events.mdx:123-173`
+- `android/src/main/java/app/notifee/core/Notifee.java:447-474`
+- `docs/react-native/events.mdx:123-173`
 
 **Current evidence**
 
@@ -326,9 +326,9 @@ This is a symptom of the same split-source problem as `#1279` and `#880`.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/Notifee.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationReceiverActivity.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationReceiverHandler.java`
+- `android/src/main/java/app/notifee/core/Notifee.java`
+- `android/src/main/java/app/notifee/core/NotificationReceiverActivity.java`
+- `android/src/main/java/app/notifee/core/NotificationReceiverHandler.java`
 
 **Suggested fix**
 
@@ -356,11 +356,11 @@ Trigger scheduling still moves through a mix of repository persistence, alarm ma
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/packages/react-native/src/NotifeeApiModule.ts`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationManager.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotifeeAlarmManager.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/database/WorkDataRepository.java`
-- `/home/runner/work/notifee/notifee/docs/react-native/triggers.mdx`
+- `packages/react-native/src/NotifeeApiModule.ts`
+- `android/src/main/java/app/notifee/core/NotificationManager.java`
+- `android/src/main/java/app/notifee/core/NotifeeAlarmManager.java`
+- `android/src/main/java/app/notifee/core/database/WorkDataRepository.java`
+- `docs/react-native/triggers.mdx`
 
 **Suggested fix**
 
@@ -392,10 +392,10 @@ The scheduling stack still depends on alarm and background execution behavior th
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotifeeAlarmManager.java:147-214`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationAlarmReceiver.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/AlarmPermissionBroadcastReceiver.java`
-- `/home/runner/work/notifee/notifee/docs/react-native/android/background-restrictions.mdx`
+- `android/src/main/java/app/notifee/core/NotifeeAlarmManager.java:147-214`
+- `android/src/main/java/app/notifee/core/NotificationAlarmReceiver.java`
+- `android/src/main/java/app/notifee/core/AlarmPermissionBroadcastReceiver.java`
+- `docs/react-native/android/background-restrictions.mdx`
 
 **Current evidence**
 
@@ -435,9 +435,9 @@ The current scheduling logic sets the next timestamp and schedules it, but there
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotifeeAlarmManager.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/model/TimestampTriggerModel.java`
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/RebootBroadcastReceiver.java`
+- `android/src/main/java/app/notifee/core/NotifeeAlarmManager.java`
+- `android/src/main/java/app/notifee/core/model/TimestampTriggerModel.java`
+- `android/src/main/java/app/notifee/core/RebootBroadcastReceiver.java`
 
 **Suggested fix**
 
@@ -468,8 +468,8 @@ The content builder still handles sound and critical sound in a way that may imp
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCore.m:236-419`
-- `/home/runner/work/notifee/notifee/ios/NotifeeCore/NotifeeCoreUtil.m`
+- `ios/NotifeeCore/NotifeeCore.m:236-419`
+- `ios/NotifeeCore/NotifeeCoreUtil.m`
 
 **Current evidence**
 
@@ -503,9 +503,9 @@ This is still an open feature gap. No first-class API exists to express “repla
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationManager.java`
-- `/home/runner/work/notifee/notifee/packages/react-native/src/types/Notification.ts`
-- `/home/runner/work/notifee/notifee/packages/react-native/src/types/Trigger.ts`
+- `android/src/main/java/app/notifee/core/NotificationManager.java`
+- `packages/react-native/src/types/Notification.ts`
+- `packages/react-native/src/types/Trigger.ts`
 
 **Suggested fix**
 
@@ -535,8 +535,8 @@ The code still uses `PendingIntent.getActivities(...)` for action delivery.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/NotificationPendingIntent.java:42-92`
-- `/home/runner/work/notifee/notifee/docs/react-native/android/interaction.mdx`
+- `android/src/main/java/app/notifee/core/NotificationPendingIntent.java:42-92`
+- `docs/react-native/android/interaction.mdx`
 
 **Current evidence**
 
@@ -571,9 +571,9 @@ Foreground service startup still calls `startForegroundService(intent)` directly
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/ForegroundService.java:45-58`
-- `/home/runner/work/notifee/notifee/docs/react-native/android/foreground-service.mdx`
-- `/home/runner/work/notifee/notifee/docs/react-native/android/background-restrictions.mdx`
+- `android/src/main/java/app/notifee/core/ForegroundService.java:45-58`
+- `docs/react-native/android/foreground-service.mdx`
+- `docs/react-native/android/background-restrictions.mdx`
 
 **Suggested fix**
 
@@ -600,9 +600,9 @@ Foreground service coordination still depends on event bus behavior and app proc
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/android/src/main/java/app/notifee/core/ForegroundService.java`
-- `/home/runner/work/notifee/notifee/packages/react-native/src/NotifeeApiModule.ts`
-- `/home/runner/work/notifee/notifee/docs/react-native/android/foreground-service.mdx`
+- `android/src/main/java/app/notifee/core/ForegroundService.java`
+- `packages/react-native/src/NotifeeApiModule.ts`
+- `docs/react-native/android/foreground-service.mdx`
 
 **Suggested fix**
 
@@ -634,9 +634,9 @@ This fork still uses a floating local Maven version.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/packages/react-native/android/build.gradle:95-120`
-- `/home/runner/work/notifee/notifee/android/build.gradle`
-- `/home/runner/work/notifee/notifee/SDK55_MIGRATION.md`
+- `packages/react-native/android/build.gradle:95-120`
+- `android/build.gradle`
+- `SDK55_MIGRATION.md`
 
 **Current evidence**
 
@@ -670,9 +670,9 @@ The Android test app still includes `:notifee_core` from source.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/tests_react_native/android/settings.gradle:28-29`
-- `/home/runner/work/notifee/notifee/.github/workflows/tests_e2e_android.yml`
-- `/home/runner/work/notifee/notifee/.github/workflows/publish.yml`
+- `tests_react_native/android/settings.gradle:28-29`
+- `.github/workflows/tests_e2e_android.yml`
+- `.github/workflows/publish.yml`
 
 **Suggested fix**
 
@@ -694,9 +694,9 @@ Current E2E workflows still show limited API coverage and CI workarounds.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/.github/workflows/tests_e2e_android.yml`
-- `/home/runner/work/notifee/notifee/.github/workflows/tests_e2e_ios.yml`
-- `/home/runner/work/notifee/notifee/tests_react_native`
+- `.github/workflows/tests_e2e_android.yml`
+- `.github/workflows/tests_e2e_ios.yml`
+- `tests_react_native`
 
 **Current evidence**
 
@@ -729,9 +729,9 @@ There is still no official config plugin shipped from the React Native package.
 
 **Where to deep dive**
 
-- `/home/runner/work/notifee/notifee/packages/react-native/package.json`
-- `/home/runner/work/notifee/notifee/packages/react-native`
-- `/home/runner/work/notifee/notifee/docs/react-native/installation.mdx`
+- `packages/react-native/package.json`
+- `packages/react-native`
+- `docs/react-native/installation.mdx`
 
 **Suggested fix**
 
@@ -761,21 +761,21 @@ This exact failure is less compelling in this fork because the repository now su
 
 Relevant files:
 
-- `/home/runner/work/notifee/notifee/packages/react-native/android/build.gradle`
-- `/home/runner/work/notifee/notifee/.github/workflows/publish.yml`
+- `packages/react-native/android/build.gradle`
+- `.github/workflows/publish.yml`
 
 ### `#1277` release notes missing
 
 This appears addressed by:
 
-- `/home/runner/work/notifee/notifee/docs/react-native/release-notes.mdx`
-- `/home/runner/work/notifee/notifee/docs.json`
+- `docs/react-native/release-notes.mdx`
+- `docs.json`
 
 ### `#1285` maintenance status
 
 This fork is clearly presented as maintained in:
 
-- `/home/runner/work/notifee/notifee/README.md`
+- `README.md`
 
 ---
 
