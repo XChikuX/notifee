@@ -36,7 +36,6 @@ These upstream issues still appear relevant to this fork:
 - `#875` Android scheduled notifications fire at wrong time after DST / time change
 - `#870` Android 13 `onBackgroundEvent` vs `getInitialNotification` inconsistency
 - `#826` iOS `createTriggerNotification` fails with minimal/silent config
-- `#799` package does not contain a valid Expo config plugin
 - `#766` replace existing notification when using `createTriggerNotification`
 - `#470` `startForegroundService()` not allowed due to Android background-start restrictions
 
@@ -721,9 +720,9 @@ Current E2E workflows still show limited API coverage and CI workarounds.
 
 ---
 
-### `#1121` and `#799` Expo config plugin support
+### `#1121` official Expo config plugin
 
-**Why these still look valid**
+**Why this still looks valid**
 
 There is still no official config plugin shipped from the React Native package.
 
@@ -732,24 +731,186 @@ There is still no official config plugin shipped from the React Native package.
 - `packages/react-native/package.json`
 - `packages/react-native`
 - `docs/react-native/installation.mdx`
+- `docs/react-native/ios/behaviour.mdx`
+- `docs/react-native/ios/remote-notification-support.mdx`
+- `docs/react-native/android/appearance.mdx`
 
 **Suggested fix**
 
-- Add an official Expo config plugin package or export.
-- Cover at least:
-  - Android icons
-  - sounds
-  - manifest changes / services / receivers
-  - iOS entitlements / notification categories / sounds / extensions as applicable
+- Treat `#799` as subsumed by `#1121` rather than tracking them separately.
+- Prefer direct native integration whenever the app already has checked-in `ios/` and `android/` projects.
+- Add an official Expo config plugin package or export only for build-time changes that Expo cannot express at runtime.
+- Scope that plugin to:
+  - iOS notification service extension creation / Podfile wiring / entitlements
+  - copying notification sound files into the main app target and extension target
+  - Android small icon resource generation or copying into `mipmap` / `drawable`
+  - any required manifest changes / services / receivers
 - Add Expo sample app coverage.
 
 **Fast-forward modernization**
 
-- Make Expo integration a first-class supported path rather than relying on community plugins.
+- Keep notification behavior in native code and JS runtime APIs.
+- Use Expo plugin automation only for prebuild-time asset and project mutation tasks.
 
 **Relevant platform docs**
 
 - Expo config plugins: <https://docs.expo.dev/config-plugins/introduction/>
+
+---
+
+### Focused research: sound, remote iOS notifications, and Android icons
+
+The user specifically called out three areas that do not appear to work as expected today for Expo-style apps:
+
+- custom sound handling
+- remote iOS notifications
+- Android icons
+
+After reviewing this repository and the supplied references, the main problem does **not** appear to be the runtime native code. The main problem is the missing build-time integration layer for Expo/prebuild users.
+
+#### Reference implementations reviewed
+
+- `LunatiqueCoder/expo-notifee-plugin`
+- `arielrvjr/natify/packages/adapters/push-notification-firebase`
+- `arielrvjr/natify/packages/adapters/push-notification-notifee`
+
+Key takeaways from those references:
+
+- `expo-notifee-plugin` automates iOS Notification Service Extension setup and iOS sound-file bundling, but its own README still marks Android icons and Android sounds as incomplete.
+- `natify` splits remote transport/token handling (`firebase`) from local notification UI (`notifee`), which supports the idea that Notifee should stay focused on notification presentation while remote transport remains a separate concern.
+
+#### 1. iOS custom sound findings
+
+**What the code already does**
+
+- Local notification content uses `UNNotificationSound` in `ios/NotifeeCore/NotifeeCore.m:367-418`.
+- Remote notification support docs already explain two paths:
+  - plain APNs keys for category/sound: `docs/react-native/ios/remote-notification-support.mdx`
+  - `notifee_options` + Notification Service Extension for richer modification: `docs/react-native/ios/remote-notification-support.mdx`
+- The user-facing iOS behaviour docs currently document custom sound files as `.wav`, `.aiff`, or `.caf`: `docs/react-native/ios/behaviour.mdx:13-28`
+
+**What is likely going wrong in Expo apps**
+
+- Expo asset imports do not automatically make a file available as an iOS notification sound.
+- If the current workflow relies on importing `.mp3` files via `expo-notifications` or `expo-assets`, that is not a safe assumption for Notifee iOS notification sounds.
+- For iOS notification sounds, the file needs to be bundled into the native target that will play it, and for `notifee_options`/NSE flows that often means the extension target as well.
+
+**Practical recommendation**
+
+- Prefer native code directly if the project already uses `expo prebuild` and keeps the generated `ios/` folder in source control.
+- For iOS custom notification sounds:
+  - convert notification sounds to `.wav`, `.aiff`, or `.caf`
+  - copy them into the iOS app target during prebuild/native build
+  - if a Notification Service Extension modifies the remote notification, make sure the same files are available to that extension target too
+- Do **not** rely on runtime `expo-assets` resolution for iOS notification sounds.
+
+**When an Expo plugin is genuinely needed**
+
+- Only for automating the file-copy / target-membership work during `expo prebuild`.
+- This is exactly the kind of build-time concern an Expo plugin is good at.
+
+#### 2. iOS remote notification findings
+
+**What the code already does**
+
+- Notification delegate interception and event bridging live in `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`.
+- Remote notification metadata is parsed in `ios/NotifeeCore/NotifeeCoreUtil.m:600-617`.
+- The Notification Service Extension helper already converts `notifee_options` into Notifee content in `ios/NotifeeCore/NotifeeCoreExtensionHelper.m:37-73`.
+
+**What is likely going wrong**
+
+- There are two very different remote-notification paths:
+  1. standard APNs keys (`aps.sound`, `aps.category`, etc.)
+  2. `notifee_options` content mutation through a Notification Service Extension
+- If the use case is only custom sound/category/threading, APNs keys should usually be preferred because they avoid extension complexity.
+- If images or content mutation are required, the extension path is necessary, and Expo users currently have no official automation for:
+  - creating the extension target
+  - wiring Podfile entries
+  - managing entitlements / app groups
+  - copying any sound files needed by that extension flow
+
+**Practical recommendation**
+
+- Prefer native APNs keys first for remote iOS notifications whenever they are sufficient.
+- Use `notifee_options` only when you truly need content mutation or rich media.
+- If using Expo:
+  - prefer maintaining the native iOS project directly after `expo prebuild` if your team is comfortable with native files
+  - use an Expo plugin only to automate Notification Service Extension setup if you need repeatable prebuild automation
+
+**Deep-dive files**
+
+- `ios/NotifeeCore/NotifeeCore+UNUserNotificationCenter.m`
+- `ios/NotifeeCore/NotifeeCoreExtensionHelper.m`
+- `ios/NotifeeCore/NotifeeCoreUtil.m`
+- `docs/react-native/ios/remote-notification-support.mdx`
+
+#### 3. Android icon findings
+
+**What the code already does**
+
+- `smallIcon` is resolved strictly from Android native resources in `android/src/main/java/app/notifee/core/model/NotificationAndroidModel.java:503-521`.
+- Resource lookup flows through `android/src/main/java/app/notifee/core/utility/ResourceUtils.java`.
+- `largeIcon` is more flexible and can come from URLs, local assets, file paths, or resources; the docs already reflect that in `docs/react-native/android/appearance.mdx`.
+
+**What is likely going wrong in Expo apps**
+
+- `smallIcon` is **not** a runtime JS asset path. It must be an Android resource name already present in `res/mipmap` or `res/drawable`.
+- That means `expo-assets` or JS imports are not enough for `smallIcon`.
+- Expo/prebuild users need a build-time step that creates or copies those resources into the Android project.
+
+**Practical recommendation**
+
+- Prefer native Android resources directly if the app already keeps the generated `android/` folder.
+- Reserve an Expo plugin for:
+  - generating notification small-icon resources from a source asset, or
+  - copying prebuilt icon resources into the Android project during prebuild
+- Do not use an Expo plugin for `largeIcon`; that already works through runtime asset/URL handling and should stay native/runtime-driven.
+
+**Deep-dive files**
+
+- `android/src/main/java/app/notifee/core/model/NotificationAndroidModel.java:503-521`
+- `android/src/main/java/app/notifee/core/utility/ResourceUtils.java`
+- `android/src/main/java/app/notifee/core/NotificationManager.java`
+- `docs/react-native/android/appearance.mdx`
+
+#### Recommended documentation updates from this research
+
+The public docs should be sharpened in these specific ways:
+
+- `docs/react-native/installation.mdx`
+  - explicitly say there is no official Expo config plugin today
+  - recommend direct native integration first for prebuild users
+  - explain that Expo plugins are only needed for build-time automation
+- `docs/react-native/ios/behaviour.mdx`
+  - clarify that iOS notification sounds must be bundled native resources
+  - warn that Expo asset imports are not enough by themselves
+  - call out that `.mp3` is not the recommended Notifee iOS sound format path
+- `docs/react-native/ios/remote-notification-support.mdx`
+  - tell users to prefer APNs keys when they only need standard remote-notification fields
+  - explain when `notifee_options` + Notification Service Extension is worth the added complexity
+  - add Expo-specific setup guidance for extension automation
+- `docs/react-native/android/appearance.mdx`
+  - clarify that `smallIcon` must be a native Android resource name
+  - explicitly say runtime Expo assets cannot satisfy `smallIcon`
+  - explain that only small-icon generation/copy belongs in an Expo plugin
+
+#### Recommended product direction
+
+If this fork wants to support Expo well without over-abstracting everything into plugins, the right split is:
+
+- **native code first**
+  - keep runtime notification behavior in Notifee native code + JS APIs
+- **Expo plugin second**
+  - add one official plugin only for deterministic prebuild-time changes
+  - do not move runtime notification logic into the plugin layer
+
+That means:
+
+- iOS remote notifications with APNs keys: native only
+- iOS remote notifications with `notifee_options`: native runtime + optional plugin for NSE setup
+- iOS custom sounds: native runtime + optional plugin for asset copying
+- Android small icons: native runtime + optional plugin for resource generation/copy
+- Android large icons: native/runtime only
 
 ---
 
@@ -817,7 +978,7 @@ If these are going to be fixed rather than only tracked, the best order is:
 5. **Packaging and integration reliability**
    - `#1079`, `#1115`
 6. **Feature / ecosystem support**
-   - `#766`, `#1121`, `#799`
+   - `#766`, `#1121`
 7. **Testing expansion**
    - `#1126`
 
