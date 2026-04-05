@@ -239,7 +239,7 @@ class HeadlessTask {
         @SuppressLint("VisibleForTests")
         fun getReactContext(context: Context): ReactContext? {
             val reactHost = getReactHost(context)
-            Assertions.assertNotNull(reactHost, "getReactHost() is null in New Architecture")
+            Assertions.assertNotNull(reactHost, "getReactHost() is null in bridgeless/TurboModule mode")
             try {
                 val method = reactHost!!.javaClass.getMethod("getCurrentReactContext")
                 return method.invoke(reactHost) as? ReactContext

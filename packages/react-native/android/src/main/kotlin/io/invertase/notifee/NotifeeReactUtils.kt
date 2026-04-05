@@ -86,6 +86,9 @@ object NotifeeReactUtils {
         try {
             val reactContext = HeadlessTask.getReactContext(EventSubscriber.getContext())
 
+            // During startup/shutdown the React instance may not be active yet.
+            // Silently dropping events here is expected; they will be delivered
+            // once the JS layer subscribes via addListener.
             if (reactContext == null || !reactContext.hasActiveReactInstance()) {
                 return
             }
