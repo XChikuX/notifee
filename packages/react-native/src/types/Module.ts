@@ -12,6 +12,7 @@ import {
 } from './NotificationAndroid';
 import { IOSNotificationCategory, IOSNotificationPermissions } from './NotificationIOS';
 import { PowerManagerInfo } from './PowerManagerInfo';
+import { NotificationConfig } from './NotificationConfig';
 import { DisplayedNotification, NotificationSettings, TriggerNotification } from '..';
 import type { FcmConfig, FcmRemoteMessage } from '../fcm/types';
 
@@ -455,6 +456,29 @@ export interface Module {
    * Configures defaults used by `handleFcmMessage`.
    */
   setFcmConfig(config: FcmConfig): Promise<void>;
+
+  /**
+   * Configures how Notifee handles notifications at a global level.
+   *
+   * Currently supports an iOS-specific opt-out flag to prevent Notifee from intercepting
+   * remote notification tap handlers. This is useful when using Notifee alongside
+   * `@react-native-firebase/messaging`, where Notifee's interception prevents
+   * `onNotificationOpenedApp` / `getInitialNotification` from firing.
+   *
+   * ```js
+   * import notifee from '@psync/notifee';
+   *
+   * // Allow Firebase Messaging to handle remote notification taps
+   * await notifee.setNotificationConfig({
+   *   ios: {
+   *     interceptRemoteNotifications: false,
+   *   },
+   * });
+   * ```
+   *
+   * @param config The {@link NotificationConfig} object.
+   */
+  setNotificationConfig(config: NotificationConfig): Promise<void>;
 
   /**
    * Set the notification categories to be used on this Apple device.
