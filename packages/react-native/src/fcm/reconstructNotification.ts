@@ -147,7 +147,8 @@ function buildIosConfig(raw: Record<string, unknown>): NotificationIOS {
           return false;
         }
 
-        if (typeof att.url !== 'string' || att.url.length === 0) {
+        const attachment = att as Record<string, unknown>;
+        if (typeof attachment.url !== 'string' || attachment.url.length === 0) {
           console.warn(`${PREFIX} ios.attachments entry has missing or empty url. Skipped.`);
           return false;
         }
