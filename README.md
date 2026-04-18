@@ -100,10 +100,6 @@ npm login
 npm publish                     # in ./packages/react-native/
 ```
 
-### Troubleshooting
-
-If you encounter build issues, see [EXAMPLE_APP_GRADLE_TRIAGE.md](./EXAMPLE_APP_GRADLE_TRIAGE.md) for common Android Gradle configuration fixes.
-
 ### Android
 
 The APIs for Android allow for creating rich, styled and highly interactive notifications. Below you'll find guides that cover the supported Android features.
