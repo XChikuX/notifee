@@ -2,6 +2,7 @@ const PREFIX = '[notifee]';
 
 export type ParsedPayload = {
   _v?: number;
+  id?: string;
   title?: string;
   body?: string;
   android?: Record<string, unknown>;

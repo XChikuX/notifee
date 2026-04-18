@@ -53,6 +53,14 @@ let fcmConfig: FcmConfig = {};
 
 let registeredForegroundServiceTask: (notification: Notification) => Promise<void>;
 
+function cloneFcmConfig(config: FcmConfig): FcmConfig {
+  return {
+    ...config,
+    defaultPressAction: config.defaultPressAction ? { ...config.defaultPressAction } : undefined,
+    ios: config.ios ? { ...config.ios } : undefined,
+  };
+}
+
 if (isAndroid) {
   // Register foreground service
   AppRegistry.registerHeadlessTask(kReactNativeNotifeeForegroundServiceHeadlessTask, () => {
@@ -402,10 +410,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
       throw new Error("notifee.handleFcmMessage(*) 'remoteMessage' expected an object.");
     }
 
-    const config: FcmConfig = {
-      ...fcmConfig,
-      ios: fcmConfig.ios ? { ...fcmConfig.ios } : undefined,
-    };
+    const config = cloneFcmConfig(fcmConfig);
 
     const parsed = parseFcmPayload(remoteMessage.data);
 
@@ -446,10 +451,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
       throw new Error(`notifee.setFcmConfig(*) config must be a plain object. Got: ${got}`);
     }
 
-    fcmConfig = {
-      ...config,
-      ios: config.ios ? { ...config.ios } : undefined,
-    };
+    fcmConfig = cloneFcmConfig(config);
 
     return Promise.resolve();
   };
