@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const imageSize = require('image-size');
 const { generateImageAsync } = require('@expo/image-utils');
 const { withDangerousMod } = require('@expo/config-plugins');
 const { LARGE_ICON_SIZES, RES_PATH, SMALL_ICON_SIZES } = require('./constants');
-const { log } = require('./utils');
+const { log, throwPluginError, warn } = require('./utils');
 
 function ensureDir(directory) {
   fs.mkdirSync(directory, { recursive: true });
@@ -24,8 +25,35 @@ async function generateSizedIconBuffer(projectRoot, iconPath, size) {
   return result.source;
 }
 
+function validateIconSource(projectRoot, icon) {
+  const resolvedPath = path.resolve(projectRoot, icon.path);
+  if (!fs.existsSync(resolvedPath)) {
+    throwPluginError(`Android icon '${icon.name}' could not be found at '${icon.path}'.`);
+  }
+
+  const dimensions = imageSize.imageSize(resolvedPath);
+  if (dimensions.width && dimensions.height && dimensions.width !== dimensions.height) {
+    warn(
+      `Android icon '${icon.name}' is not square (${dimensions.width}x${dimensions.height}). Notification icons usually work best with square source assets.`,
+    );
+  }
+
+  if (icon.type === 'small') {
+    if (path.extname(resolvedPath).toLowerCase() !== '.png') {
+      warn(
+        `Android small icon '${icon.name}' is not a PNG source. Status bar icons usually work best as transparent PNG assets.`,
+      );
+    }
+
+    warn(
+      `Android small icon '${icon.name}' should be a white-on-transparent monochrome asset to render correctly in the status bar.`,
+    );
+  }
+}
+
 async function saveIcon(projectRoot, icon) {
   const folders = icon.type === 'large' ? LARGE_ICON_SIZES : SMALL_ICON_SIZES;
+  validateIconSource(projectRoot, icon);
 
   for (const folder of folders) {
     const destinationDir = path.join(projectRoot, RES_PATH, folder.name);

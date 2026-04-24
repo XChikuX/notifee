@@ -65,6 +65,7 @@ export default {
             },
           ],
           enableNotificationServiceExtension: true,
+          iosSoundFiles: ['./assets/notifications/chime.wav'],
           iosDeploymentTarget: '15.1',
         },
       ],
@@ -79,6 +80,7 @@ Supported plugin options:
 - `backgroundModes?: string[]`
 - `enableCommunicationNotifications?: boolean`
 - `androidIcons?: Array<{ name: string; path: string; type: 'small' | 'large' }>`
+- `iosSoundFiles?: string[]`
 - `enableNotificationServiceExtension?: boolean`
 - `iosDeploymentTarget?: string`
 - `notificationServiceExtensionName?: string`
@@ -94,6 +96,14 @@ When `enableNotificationServiceExtension` is enabled, the plugin will:
 - generate a default `NotificationService.m` that calls `NotifeeExtensionHelper`,
 - add application-group entitlements for the app and extension, and
 - register the extension in `expo.extra.eas.build.experimental.ios.appExtensions`.
+
+When `iosSoundFiles` is set, the plugin will copy supported iOS notification sound assets (`.wav`, `.aif`, `.aiff`, `.caf`) into the generated native iOS project, and also into the Notification Service Extension target when extension automation is enabled.
+
+Android icon notes:
+
+- small icons should be transparent, monochrome status-bar assets,
+- the plugin now warns when a small icon source is not a PNG, and
+- the plugin warns when an icon source is not square.
 
 ## Documentation
 

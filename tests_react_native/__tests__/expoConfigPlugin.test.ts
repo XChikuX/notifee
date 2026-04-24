@@ -27,6 +27,7 @@ describe('Expo config plugin', () => {
       'dev.psync.notifee.NotifeeNotificationService',
     );
     expect(normalized.appGroupName).toBe('group.dev.psync.notifee.notifee');
+    expect(normalized.iosSoundFiles).toEqual([]);
   });
 
   test('rejects invalid APS environment values', () => {
@@ -53,5 +54,16 @@ describe('Expo config plugin', () => {
         ),
       ),
     ).toThrow(/bundleIdentifier/);
+  });
+
+  test('rejects invalid ios sound file entries', () => {
+    expect(() =>
+      validateProps(
+        normalizeProps(
+          { ios: { bundleIdentifier: 'dev.psync.notifee' } },
+          { iosSoundFiles: ['ding.mp3', ''] },
+        ),
+      ),
+    ).toThrow(/iosSoundFiles/);
   });
 });

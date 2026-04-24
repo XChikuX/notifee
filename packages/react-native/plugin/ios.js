@@ -11,9 +11,11 @@ const {
   DEFAULT_IOS_BUILD_NUMBER,
   DEFAULT_IOS_DEPLOYMENT_TARGET,
   DEFAULT_NOTIFICATION_SERVICE_FILE,
+  IOS_SOUNDS_DIR,
   USER_ACTIVITY_TYPES,
+  VALID_IOS_SOUND_EXTENSIONS,
 } = require('./constants');
-const { log } = require('./utils');
+const { log, throwPluginError } = require('./utils');
 
 function getExtensionDir(projectRoot, extensionName) {
   return path.join(projectRoot, 'ios', extensionName);
@@ -174,6 +176,87 @@ function addExtensionFiles(config, props) {
       return modConfig;
     },
   ]);
+}
+
+function ensureSoundFile(projectRoot, soundPath) {
+  const resolvedPath = path.resolve(projectRoot, soundPath);
+  if (!fs.existsSync(resolvedPath)) {
+    throwPluginError(`iOS sound file '${soundPath}' could not be found.`);
+  }
+
+  const extension = path.extname(resolvedPath).toLowerCase();
+  if (!VALID_IOS_SOUND_EXTENSIONS.includes(extension)) {
+    throwPluginError(
+      `iOS sound file '${soundPath}' must use one of: ${VALID_IOS_SOUND_EXTENSIONS.join(', ')}.`,
+    );
+  }
+
+  return resolvedPath;
+}
+
+function addResourceFileToTarget(project, filePath, target) {
+  project.addResourceFile(filePath, { target: target.uuid });
+}
+
+function copyIOSSoundFiles(config, props) {
+  if (!props.iosSoundFiles.length) {
+    return config;
+  }
+
+  const updatedConfig = withDangerousMod(config, [
+    'ios',
+    async modConfig => {
+      const projectRoot = modConfig.modRequest.projectRoot;
+      const iosRoot = path.join(projectRoot, 'ios');
+      const mainSoundsDir = path.join(iosRoot, IOS_SOUNDS_DIR);
+      fs.mkdirSync(mainSoundsDir, { recursive: true });
+
+      for (const soundPath of props.iosSoundFiles) {
+        const sourcePath = ensureSoundFile(projectRoot, soundPath);
+        const fileName = path.basename(sourcePath);
+        fs.copyFileSync(sourcePath, path.join(mainSoundsDir, fileName));
+
+        if (props.enableNotificationServiceExtension) {
+          const extensionSoundsDir = path.join(
+            getExtensionDir(projectRoot, props.extensionName),
+            IOS_SOUNDS_DIR,
+          );
+          fs.mkdirSync(extensionSoundsDir, { recursive: true });
+          fs.copyFileSync(sourcePath, path.join(extensionSoundsDir, fileName));
+        }
+
+        log(`Copied iOS notification sound '${fileName}'.`, props.verbose);
+      }
+
+      return modConfig;
+    },
+  ]);
+
+  return withXcodeProject(updatedConfig, modConfig => {
+    const project = modConfig.modResults;
+    const appTarget = project.pbxTargetByName(modConfig.name);
+    if (!appTarget) {
+      return modConfig;
+    }
+
+    for (const soundPath of props.iosSoundFiles) {
+      const fileName = path.basename(soundPath);
+      addResourceFileToTarget(project, `${IOS_SOUNDS_DIR}/${fileName}`, appTarget);
+
+      if (props.enableNotificationServiceExtension) {
+        const extensionTarget = project.pbxTargetByName(props.extensionName);
+        if (extensionTarget) {
+          addResourceFileToTarget(
+            project,
+            `${props.extensionName}/${IOS_SOUNDS_DIR}/${fileName}`,
+            extensionTarget,
+          );
+        }
+      }
+    }
+
+    return modConfig;
+  });
 }
 
 function addExtensionTarget(config, props) {
@@ -351,6 +434,8 @@ function withNotifeeIos(config, props) {
       return modConfig;
     });
   }
+
+  nextConfig = copyIOSSoundFiles(nextConfig, props);
 
   if (!props.enableNotificationServiceExtension) {
     return nextConfig;

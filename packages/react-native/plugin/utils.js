@@ -1,5 +1,10 @@
 const path = require('path');
-const { DEFAULT_BACKGROUND_MODES, DEFAULT_EXTENSION_NAME, PACKAGE_NAME } = require('./constants');
+const {
+  DEFAULT_BACKGROUND_MODES,
+  DEFAULT_EXTENSION_NAME,
+  PACKAGE_NAME,
+  VALID_IOS_SOUND_EXTENSIONS,
+} = require('./constants');
 
 function throwPluginError(message) {
   throw new Error(`${PACKAGE_NAME}: ${message}`);
@@ -9,6 +14,10 @@ function log(message, verbose) {
   if (verbose) {
     console.log(`${PACKAGE_NAME}: ${message}`);
   }
+}
+
+function warn(message) {
+  console.warn(`${PACKAGE_NAME}: ${message}`);
 }
 
 function normalizeProps(config, props) {
@@ -33,6 +42,7 @@ function normalizeProps(config, props) {
     enableNotificationServiceExtension: options.enableNotificationServiceExtension === true,
     extensionBundleIdentifier,
     extensionName,
+    iosSoundFiles: options.iosSoundFiles || [],
     iosBuildNumber: ios.buildNumber || null,
     iosDeploymentTarget: options.iosDeploymentTarget,
     verbose: options.verbose === true,
@@ -48,6 +58,7 @@ function validateProps(normalizedProps, rawProps = {}) {
     bundleIdentifier,
     customNotificationServiceFilePath,
     enableNotificationServiceExtension,
+    iosSoundFiles,
     iosDeploymentTarget,
   } = normalizedProps;
 
@@ -73,6 +84,22 @@ function validateProps(normalizedProps, rawProps = {}) {
 
   if (customNotificationServiceFilePath !== undefined && typeof customNotificationServiceFilePath !== 'string') {
     throwPluginError("'customNotificationServiceFilePath' must be a string.");
+  }
+
+  if (!Array.isArray(iosSoundFiles)) {
+    throwPluginError("'iosSoundFiles' must be an array of file paths.");
+  }
+
+  for (const soundPath of iosSoundFiles) {
+    if (typeof soundPath !== 'string' || soundPath.length === 0) {
+      throwPluginError("'iosSoundFiles' entries must be non-empty strings.");
+    }
+
+    if (!VALID_IOS_SOUND_EXTENSIONS.includes(path.extname(soundPath).toLowerCase())) {
+      throwPluginError(
+        `'iosSoundFiles' entries must use one of: ${VALID_IOS_SOUND_EXTENSIONS.join(', ')}.`,
+      );
+    }
   }
 
   if (androidIcons !== undefined && !Array.isArray(androidIcons)) {
@@ -121,4 +148,5 @@ module.exports = {
   normalizeProps,
   throwPluginError,
   validateProps,
+  warn,
 };
