@@ -31,7 +31,15 @@ function validateIconSource(projectRoot, icon) {
     throwPluginError(`Android icon '${icon.name}' could not be found at '${icon.path}'.`);
   }
 
-  const dimensions = imageSize.imageSize(resolvedPath);
+  let dimensions;
+  try {
+    dimensions = imageSize.imageSize(resolvedPath);
+  } catch (error) {
+    throwPluginError(
+      `Android icon '${icon.name}' could not be read as an image at '${icon.path}'.`,
+    );
+  }
+
   if (dimensions.width && dimensions.height && dimensions.width !== dimensions.height) {
     warn(
       `Android icon '${icon.name}' is not square (${dimensions.width}x${dimensions.height}). Notification icons usually work best with square source assets.`,
@@ -44,10 +52,6 @@ function validateIconSource(projectRoot, icon) {
         `Android small icon '${icon.name}' is not a PNG source. Status bar icons usually work best as transparent PNG assets.`,
       );
     }
-
-    warn(
-      `Android small icon '${icon.name}' should be a white-on-transparent monochrome asset to render correctly in the status bar.`,
-    );
   }
 }
 

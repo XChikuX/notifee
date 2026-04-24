@@ -42,4 +42,4 @@ jest.mock('react-native', () => {
       currentState: 'active',
     },
   };
-});
+}, { virtual: true });

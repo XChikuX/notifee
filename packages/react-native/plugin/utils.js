@@ -20,6 +20,10 @@ function warn(message) {
   console.warn(`${PACKAGE_NAME}: ${message}`);
 }
 
+function isValidIOSSoundFileExtension(filePath) {
+  return VALID_IOS_SOUND_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
+}
+
 function normalizeProps(config, props) {
   const options = props || {};
   const ios = config.ios || {};
@@ -95,7 +99,7 @@ function validateProps(normalizedProps, rawProps = {}) {
       throwPluginError("'iosSoundFiles' entries must be non-empty strings.");
     }
 
-    if (!VALID_IOS_SOUND_EXTENSIONS.includes(path.extname(soundPath).toLowerCase())) {
+    if (!isValidIOSSoundFileExtension(soundPath)) {
       throwPluginError(
         `'iosSoundFiles' entries must use one of: ${VALID_IOS_SOUND_EXTENSIONS.join(', ')}.`,
       );
@@ -149,4 +153,5 @@ module.exports = {
   throwPluginError,
   validateProps,
   warn,
+  isValidIOSSoundFileExtension,
 };

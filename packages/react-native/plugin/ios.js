@@ -15,7 +15,7 @@ const {
   USER_ACTIVITY_TYPES,
   VALID_IOS_SOUND_EXTENSIONS,
 } = require('./constants');
-const { log, throwPluginError } = require('./utils');
+const { isValidIOSSoundFileExtension, log, throwPluginError } = require('./utils');
 
 function getExtensionDir(projectRoot, extensionName) {
   return path.join(projectRoot, 'ios', extensionName);
@@ -114,7 +114,9 @@ function createExtensionEntitlements(appGroupName) {
 
 function createPodfileTargetBlock(extensionName) {
   return `
-podspec = File.join(File.dirname(\`node --print "require.resolve('@psync/notifee/package.json')"\`), 'RNNotifeeCore.podspec')
+package_json = \`node --print "require.resolve('@psync/notifee/package.json')"\`.strip
+raise '[Notifee] Failed to resolve @psync/notifee/package.json via Node. Ensure Node is available and @psync/notifee is installed before running pod install.' if package_json.nil? || package_json.empty?
+podspec = File.join(File.dirname(package_json), 'RNNotifeeCore.podspec')
 $NotifeeExtension = true
 target '${extensionName}' do
   pod 'RNNotifeeCore', :path => podspec
@@ -184,8 +186,7 @@ function ensureSoundFile(projectRoot, soundPath) {
     throwPluginError(`iOS sound file '${soundPath}' could not be found.`);
   }
 
-  const extension = path.extname(resolvedPath).toLowerCase();
-  if (!VALID_IOS_SOUND_EXTENSIONS.includes(extension)) {
+  if (!isValidIOSSoundFileExtension(resolvedPath)) {
     throwPluginError(
       `iOS sound file '${soundPath}' must use one of: ${VALID_IOS_SOUND_EXTENSIONS.join(', ')}.`,
     );
