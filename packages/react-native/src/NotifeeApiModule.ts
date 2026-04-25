@@ -181,7 +181,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     if (isAndroid || isIOS) {
       if (notificationIds) {
         if (isAndroid) {
-          return this.native.cancelAllNotificationsWithIds(
+          return this.native.cancelAllNotificationsWithIdsAndroid(
             notificationIds,
             NotificationType.ALL,
             tag ?? null,
@@ -202,7 +202,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     if (isAndroid || isIOS) {
       if (notificationIds) {
         if (isAndroid) {
-          return this.native.cancelAllNotificationsWithIds(
+          return this.native.cancelAllNotificationsWithIdsAndroid(
             notificationIds,
             NotificationType.DISPLAYED,
             tag ?? null,
@@ -222,7 +222,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     if (isAndroid || isIOS) {
       if (notificationIds) {
         if (isAndroid) {
-          return this.native.cancelAllNotificationsWithIds(
+          return this.native.cancelAllNotificationsWithIdsAndroid(
             notificationIds,
             NotificationType.TRIGGER,
             null,
@@ -242,7 +242,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     }
 
     if (isAndroid) {
-      return this.native.cancelAllNotificationsWithIds(
+      return this.native.cancelAllNotificationsWithIdsAndroid(
         [notificationId],
         NotificationType.ALL,
         tag ?? null,
@@ -264,7 +264,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     }
 
     if (isAndroid) {
-      return this.native.cancelAllNotificationsWithIds(
+      return this.native.cancelAllNotificationsWithIdsAndroid(
         [notificationId],
         NotificationType.DISPLAYED,
         tag ?? null,
@@ -286,7 +286,7 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     }
 
     if (isAndroid) {
-      return this.native.cancelAllNotificationsWithIds(
+      return this.native.cancelAllNotificationsWithIdsAndroid(
         [notificationId],
         NotificationType.TRIGGER,
         null,

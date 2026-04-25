@@ -27,7 +27,7 @@ export interface Spec extends TurboModule {
   cancelDisplayedNotifications(): Promise<void>;
   cancelTriggerNotifications(): Promise<void>;
   cancelAllNotificationsWithIds(ids: Array<string>): Promise<void>;
-  cancelAllNotificationsWithIds(
+  cancelAllNotificationsWithIdsAndroid(
     ids: Array<string>,
     notificationType: number,
     tag: string | null,
