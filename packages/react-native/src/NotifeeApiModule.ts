@@ -45,11 +45,13 @@ import { IOSNotificationCategory, IOSNotificationPermissions } from './types/Not
 import validateIOSCategory from './validators/validateIOSCategory';
 import validateIOSPermissions from './validators/validateIOSPermissions';
 import type { FcmConfig, FcmRemoteMessage } from './fcm/types';
+import type { NotificationConfig } from './types/NotificationConfig';
 import { parseFcmPayload } from './fcm/parseFcmPayload';
 import { reconstructNotification } from './fcm/reconstructNotification';
 
 let backgroundEventHandler: (event: Event) => Promise<void>;
 let fcmConfig: FcmConfig = {};
+let notificationConfig: NotificationConfig = {};
 
 let registeredForegroundServiceTask: (notification: Notification) => Promise<void>;
 
@@ -59,6 +61,15 @@ function cloneFcmConfig(config: FcmConfig): FcmConfig {
     defaultPressAction: config.defaultPressAction ? { ...config.defaultPressAction } : undefined,
     ios: config.ios ? { ...config.ios } : undefined,
   };
+}
+
+/**
+ * Returns the current notification configuration set via `setNotificationConfig()`.
+ * This is primarily intended for internal use and for consumers who need to check
+ * the current config state.
+ */
+export function getNotificationConfig(): NotificationConfig {
+  return { ...notificationConfig, ios: notificationConfig.ios ? { ...notificationConfig.ios } : undefined };
 }
 
 if (isAndroid) {
@@ -94,15 +105,21 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     } else if (isIOS) {
       this.emitter.addListener(
         kReactNativeNotifeeNotificationBackgroundEvent,
-        (event: Event): Promise<void> => {
+        (event: Event): void => {
           if (!backgroundEventHandler) {
             console.warn(
               '[notifee] no background event handler has been set. Set a handler via the "onBackgroundEvent" method.',
             );
-            return Promise.resolve();
+            return;
           }
 
-          return backgroundEventHandler(event);
+          try {
+            void backgroundEventHandler(event).catch(error => {
+              console.error('[notifee] background event handler rejected asynchronously.', error);
+            });
+          } catch (error) {
+            console.error('[notifee] background event handler threw synchronously.', error);
+          }
         },
       );
     }
@@ -458,6 +475,22 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     fcmConfig = cloneFcmConfig(config);
 
     return Promise.resolve();
+  };
+
+  public setNotificationConfig = (config: NotificationConfig): Promise<void> => {
+    if (config == null || typeof config !== 'object' || Array.isArray(config)) {
+      const got = config === null ? 'null' : Array.isArray(config) ? 'array' : typeof config;
+      throw new Error(
+        `notifee.setNotificationConfig(*) config must be a plain object. Got: ${got}`,
+      );
+    }
+
+    notificationConfig = {
+      ...config,
+      ios: config.ios ? { ...config.ios } : undefined,
+    };
+
+    return this.native.setNotificationConfig(notificationConfig);
   };
 
   public openAlarmPermissionSettings = (): Promise<void> => {

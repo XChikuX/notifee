@@ -146,6 +146,7 @@ export default {
   openNotificationSettings: jest.fn(),
   requestPermission: jest.fn(async () => testNotificationSettings),
   setFcmConfig: jest.fn(async () => {}),
+  setNotificationConfig: jest.fn(async () => {}),
   registerForegroundService: jest.fn(() => jest.fn()),
   setNotificationCategories: jest.fn(async () => {}),
   getNotificationCategories: jest.fn(async () => [testCategory]),
