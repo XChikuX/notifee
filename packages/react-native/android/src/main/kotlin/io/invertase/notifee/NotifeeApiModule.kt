@@ -58,6 +58,10 @@ class NotifeeApiModule(reactContext: ReactApplicationContext) :
             }
     }
 
+    override fun cancelAllNotificationsWithIds(idsArray: ReadableArray, promise: Promise) {
+        cancelAllNotificationsWithIds(idsArray, NOTIFICATION_TYPE_ALL.toDouble(), null, promise)
+    }
+
     override fun cancelAllNotificationsWithIds(
         idsArray: ReadableArray,
         notificationType: Double,
