@@ -113,7 +113,13 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
             return;
           }
 
-          void backgroundEventHandler(event);
+          try {
+            void backgroundEventHandler(event).catch(error => {
+              console.error('[notifee] background event handler rejected.', error);
+            });
+          } catch (error) {
+            console.error('[notifee] background event handler threw an error.', error);
+          }
         },
       );
     }
