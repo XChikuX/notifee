@@ -93,8 +93,8 @@ android {
 
 react {
   entryFile = file("../../index.js")
-  reactNativeDir = file("../../node_modules/react-native")
-  
+  reactNativeDir = file("../../../node_modules/react-native")
+
   /* Hermes Commands */
   //   The hermes compiler command to run. By default it is 'hermesc'
   // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
