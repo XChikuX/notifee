@@ -73,12 +73,12 @@ android {
   defaultConfig {
     minSdk = 28
     targetSdk = 35
-    multiDexEnabled true
+    multiDexEnabled = true
   }
 
   lint {
-    disable 'GradleCompatible'
-    abortOnError false
+    disable += 'GradleCompatible'
+    abortOnError = false
   }
 
   compileOptions {
@@ -134,7 +134,7 @@ rootProject.allprojects {
   repositories {
     if (hasNotifeeCore) {
       maven {
-        url "$notifeeDir/android/libs"
+        url = "$notifeeDir/android/libs"
       }
     }
   }

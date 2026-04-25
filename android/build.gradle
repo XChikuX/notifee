@@ -23,19 +23,19 @@ buildscript {
 
 allprojects {
   task notifeeDownloadDependencies() {
-    description 'Download all dependencies to Gradle cache'
+    description = 'Download all dependencies to Gradle cache'
   }
 
   repositories {
     mavenLocal()
     maven {
-      url("$rootDir/../node_modules/react-native/android")
+      url = "$rootDir/../node_modules/react-native/android"
     }
     maven {
-      url("$rootDir/../node_modules/jsc-android/dist")
+      url = "$rootDir/../node_modules/jsc-android/dist"
     }
     maven {
-      url "$rootDir/../node_modules/detox/Detox-android"
+      url = "$rootDir/../node_modules/detox/Detox-android"
     }
     mavenCentral {
       content {
@@ -43,7 +43,7 @@ allprojects {
       }
     }
     google()
-    maven { url 'https://www.jitpack.io' }
+    maven { url = 'https://www.jitpack.io' }
   }
 }
 
@@ -52,7 +52,7 @@ subprojects { subproject ->
 
   afterEvaluate {
     if (subproject.hasProperty('android') && subproject.name != 'app') {
-      subproject.android.compileSdkVersion rootProject.ext.compileSdkVersion
+      subproject.android.compileSdkVersion = rootProject.ext.compileSdkVersion
     }
   }
 }
@@ -85,18 +85,18 @@ ext {
 }
 
 android {
-  namespace 'app.notifee.core'
-  compileSdk 36
+  namespace = 'app.notifee.core'
+  compileSdk = 36
   testOptions {
     unitTests.returnDefaultValues = true
   }
   defaultConfig {
-    minSdk 28
-    targetSdk 35
-    versionCode 1
-    versionName "1.0"
+    minSdk = 28
+    targetSdk = 35
+    versionCode = 1
+    versionName = "1.0"
 
-    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles 'consumer-rules.pro'
 
     javaCompileOptions {
@@ -120,10 +120,10 @@ android {
 
   buildTypes {
     release {
-      minifyEnabled true
-      debuggable false
-      jniDebuggable false
-      zipAlignEnabled true
+      minifyEnabled = true
+      debuggable = false
+      jniDebuggable = false
+      zipAlignEnabled = true
       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
   }
@@ -147,10 +147,10 @@ android {
 repositories {
   mavenLocal()
   maven {
-    url("$rootDir/../node_modules/react-native/android")
+    url = "$rootDir/../node_modules/react-native/android"
   }
   maven {
-    url("$rootDir/../node_modules/jsc-android/dist")
+    url = "$rootDir/../node_modules/jsc-android/dist"
   }
   google()
   mavenCentral()
@@ -187,9 +187,9 @@ publishing {
     publications {
         aar(MavenPublication) {
             project.tasks.publishAarPublicationToMavenLocal.dependsOn("assembleRelease")
-            groupId 'app.notifee'
-            artifactId 'core'
-            version '202108261754'
+            groupId = 'app.notifee'
+            artifactId = 'core'
+            version = '202108261754'
             artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
         }
     }
