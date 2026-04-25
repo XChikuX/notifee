@@ -6,7 +6,6 @@ import React from 'react';
 import { AppRegistry, Button, Text, View } from 'react-native';
 
 import '@react-native-firebase/messaging';
-import '@react-native-firebase/functions';
 
 import Notifee, { EventType } from '@psync/notifee';
 
