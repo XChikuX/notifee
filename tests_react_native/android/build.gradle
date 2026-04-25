@@ -58,5 +58,5 @@ subprojects { subproject ->
       subproject.android.compileSdk rootProject.ext.compileSdk
     }
   }
-}
 
+}

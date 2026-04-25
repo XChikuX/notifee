@@ -38,6 +38,8 @@ def findNodeModulePath(baseDir, packageName) {
   return null
 }
 
+def reactNativeDir = findNodeModulePath(projectDir, "react-native") ?: "$rootDir/../../node_modules/react-native"
+def codegenDir = findNodeModulePath(projectDir, "@react-native/codegen") ?: "$rootDir/../../node_modules/@react-native/codegen"
 def notifeeDir = findNodeModulePath(projectDir, "@psync/notifee") ?: "$rootDir/../node_modules/@psync/notifee"
 println ":${project.name} @psync/notifee found at $notifeeDir"
 
@@ -104,6 +106,11 @@ android {
 repositories {
   google()
   mavenCentral()
+}
+
+react {
+  reactNativeDir = file(reactNativeDir)
+  codegenDir = file(codegenDir)
 }
 
 dependencies {

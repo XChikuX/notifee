@@ -94,6 +94,7 @@ android {
 react {
   entryFile = file("../../index.js")
   reactNativeDir = file("../../../node_modules/react-native")
+  codegenDir = file("../../../node_modules/@react-native/codegen")
 
   /* Hermes Commands */
   //   The hermes compiler command to run. By default it is 'hermesc'
