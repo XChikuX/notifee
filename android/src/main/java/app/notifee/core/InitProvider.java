@@ -106,7 +106,7 @@ public class InitProvider extends ContentProvider {
     try {
       return Settings.Global.getInt(context.getContentResolver(), Settings.Global.BOOT_COUNT, -1);
     } catch (Throwable t) {
-      Logger.w(TAG, "Failed to read Settings.Global.BOOT_COUNT", t);
+      Logger.e(TAG, "Failed to read Settings.Global.BOOT_COUNT", t);
       return -1;
     }
   }

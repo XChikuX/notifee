@@ -149,16 +149,18 @@ class NotifeeAlarmManager {
                               TimestampTriggerModel trigger =
                                   TimestampTriggerModel.fromBundle(triggerBundle);
                               scheduleTimestampTriggerNotification(notificationModel, trigger);
-                              return WorkDataRepository.getInstance(getApplicationContext())
+                              WorkDataRepository.getInstance(getApplicationContext())
                                   .update(
                                       new WorkDataEntity(
                                           id,
                                           workDataEntity.getNotification(),
                                           ObjectUtils.bundleToBytes(trigger.toBundle()),
                                           true));
+                              return Futures.immediateFuture(null);
                             } else {
-                              return WorkDataRepository.getInstance(getApplicationContext())
+                              WorkDataRepository.getInstance(getApplicationContext())
                                   .deleteById(id);
+                              return Futures.immediateFuture(null);
                             }
                           },
                           alarmManagerExecutor);

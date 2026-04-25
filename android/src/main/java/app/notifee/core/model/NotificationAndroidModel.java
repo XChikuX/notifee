@@ -37,6 +37,8 @@ import java.util.Objects;
 @Keep
 public class NotificationAndroidModel {
   private static final String TAG = "NotificationAndroidModel";
+  // Defined locally for AndroidX core:1.6.0 compatibility (not available until core:1.7.0)
+  private static final int FOREGROUND_SERVICE_IMMEDIATE = 0;
   private Bundle mNotificationAndroidBundle;
 
   private NotificationAndroidModel(Bundle bundle) {
@@ -371,7 +373,7 @@ public class NotificationAndroidModel {
 
   public int getForegroundServiceBehavior() {
     return mNotificationAndroidBundle.getInt(
-        "foregroundServiceBehavior", NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
+        "foregroundServiceBehavior", FOREGROUND_SERVICE_IMMEDIATE);
   }
 
   /**

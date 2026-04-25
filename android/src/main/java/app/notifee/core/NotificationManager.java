@@ -219,7 +219,17 @@ class NotificationManager {
           builder.setPriority(androidModel.getPriority());
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
               && androidModel.getAsForegroundService()) {
-            builder.setForegroundServiceBehavior(androidModel.getForegroundServiceBehavior());
+            try {
+              java.lang.reflect.Field builderField =
+                  NotificationCompat.Builder.class.getDeclaredField("mBuilder");
+              builderField.setAccessible(true);
+              Notification.Builder platformBuilder =
+                  (Notification.Builder) builderField.get(builder);
+              platformBuilder.setForegroundServiceBehavior(
+                  androidModel.getForegroundServiceBehavior());
+            } catch (Exception e) {
+              Logger.e(TAG, "Failed to set foreground service behavior", e);
+            }
           }
 
           NotificationAndroidModel.AndroidProgress progress = androidModel.getProgress();

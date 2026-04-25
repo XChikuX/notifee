@@ -13,7 +13,7 @@ public class AlarmPermissionBroadcastReceiver extends BroadcastReceiver {
 
     if (intent.getAction().equals(ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED)) {
       Log.i("AlarmPermissionReceiver", "Received alarm permission state changed event");
-      new NotifeeAlarmManager().rescheduleNotifications();
+      new NotifeeAlarmManager().rescheduleNotifications(null);
     }
   }
 }
