@@ -105,15 +105,15 @@ export default class NotifeeApiModule extends NotifeeNativeModule implements Mod
     } else if (isIOS) {
       this.emitter.addListener(
         kReactNativeNotifeeNotificationBackgroundEvent,
-        (event: Event): Promise<void> => {
+        (event: Event): void => {
           if (!backgroundEventHandler) {
             console.warn(
               '[notifee] no background event handler has been set. Set a handler via the "onBackgroundEvent" method.',
             );
-            return Promise.resolve();
+            return;
           }
 
-          return backgroundEventHandler(event);
+          void backgroundEventHandler(event);
         },
       );
     }
