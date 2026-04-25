@@ -14,7 +14,7 @@
     "axios": "^0.26.0",
     "cross-env": "^7.0.2",
     "prop-types": "^15.8.1",
-    "react": "^19.0.0",
+    "react": "^19.2.0",
     "react-native": "~0.83.2",
     "shelljs": "^0.10.0"
   },
@@ -64,6 +64,6 @@
     "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.6.2",
     "typedoc-plugin-remark": "^2.0.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.0"
   }
 }

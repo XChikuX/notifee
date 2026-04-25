@@ -90,7 +90,7 @@
     "typedoc": "^0.28.0",
     "typedoc-plugin-markdown": "^4.6.2",
     "typedoc-plugin-remark": "^2.0.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.0"
   },
   "lint-staged": {
     "packages/**/*.js": [

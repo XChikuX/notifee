@@ -2,14 +2,14 @@
   "include": [
     "packages/react-native/src/**/*.ts",
     "tests_react_native/__tests__",
-    "tests_react_native/example"
+    "tests_react_native/example",
   ],
   "compilerOptions": {
     "noEmit": true,
     "allowJs": true,
     "target": "es6",
     "isolatedModules": true,
-    "module": "commonjs",
+    "module": "ESNext",
     "declaration": true,
     "importHelpers": true,
     "jsx": "react",
@@ -20,19 +20,17 @@
     "noImplicitReturns": true,
     "preserveConstEnums": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "types": ["jest"],
-    "lib": [
-      "ES2017"
-    ]
+    "lib": ["ES2017"],
   },
   "exclude": [
     "node_modules",
     "babel.config.js",
     "metro.config.js",
     "tests_react_native/jest.config.js",
-  ]
+  ],
 }
