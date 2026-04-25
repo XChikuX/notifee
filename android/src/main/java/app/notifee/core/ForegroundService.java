@@ -63,8 +63,8 @@ public class ForegroundService extends Service {
       String message = "Cannot start foreground service: app may be in background state.";
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         message =
-            "Cannot start foreground service: background start not allowed on Android 12+. "
-                + "See https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start";
+            "Cannot start foreground service: background start not allowed on Android 12+. See"
+                + " https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start";
       }
       Logger.e(TAG, message, e);
     }

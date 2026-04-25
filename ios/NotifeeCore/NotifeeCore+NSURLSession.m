@@ -27,11 +27,13 @@
   NotifeeCoreDownloadDelegate *delegate =
       [[NotifeeCoreDownloadDelegate alloc] initWithFilePath:localPath];
 
-  NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+  NSURLSessionConfiguration *configuration =
+      [NSURLSessionConfiguration defaultSessionConfiguration];
   configuration.timeoutIntervalForRequest = 25.0;
   configuration.timeoutIntervalForResource = 25.0;
-  NSURLSession *session =
-      [NSURLSession sessionWithConfiguration:configuration delegate:delegate delegateQueue:nil];
+  NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration
+                                                        delegate:delegate
+                                                   delegateQueue:nil];
 
   NSURLSessionDataTask *task = [session dataTaskWithRequest:request];
 

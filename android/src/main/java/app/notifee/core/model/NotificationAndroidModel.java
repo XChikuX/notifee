@@ -526,7 +526,8 @@ public class NotificationAndroidModel {
       Logger.w(
           "NotificationAndroidModel",
           String.format(
-              "Notification small icon '%s' could not be resolved; falling back to the app launcher icon.",
+              "Notification small icon '%s' could not be resolved; falling back to the app launcher"
+                  + " icon.",
               rawIcon));
       return null;
     }

@@ -57,7 +57,9 @@ class NotifeeAlarmManager {
   private static final ListeningExecutorService alarmManagerListeningExecutor =
       MoreExecutors.listeningDecorator(alarmManagerExecutor);
 
-  /** Awaits async receiver work and always finishes the PendingResult, with an ANR safety timeout. */
+  /**
+   * Awaits async receiver work and always finishes the PendingResult, with an ANR safety timeout.
+   */
   private static void finishReceiverWhenDone(
       ListenableFuture<?> future,
       BroadcastReceiver.PendingResult pendingResult,
@@ -167,7 +169,8 @@ class NotifeeAlarmManager {
                 },
                 alarmManagerExecutor)
             .addOnCompleteListener((e, result) -> {}, alarmManagerExecutor);
-    finishReceiverWhenDone(displayFuture, pendingResult, "displayScheduledNotification[" + id + "]");
+    finishReceiverWhenDone(
+        displayFuture, pendingResult, "displayScheduledNotification[" + id + "]");
   }
 
   public static PendingIntent getAlarmManagerIntentForNotification(String notificationId) {
@@ -336,7 +339,8 @@ class NotifeeAlarmManager {
               }
               return;
             }
-            List<ListenableFuture<Void>> futures = new java.util.ArrayList<>(workDataEntities.size());
+            List<ListenableFuture<Void>> futures =
+                new java.util.ArrayList<>(workDataEntities.size());
             for (WorkDataEntity workDataEntity : workDataEntities) {
               futures.add(rescheduleNotification(workDataEntity));
             }

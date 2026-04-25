@@ -170,7 +170,8 @@ struct {
     UNNotificationPresentationOptions defaultOptions =
         UNNotificationPresentationOptionSound | UNNotificationPresentationOptionBadge;
     if (@available(iOS 14, *)) {
-      defaultOptions |= UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList;
+      defaultOptions |=
+          UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList;
     } else {
       defaultOptions |= UNNotificationPresentationOptionAlert;
     }
