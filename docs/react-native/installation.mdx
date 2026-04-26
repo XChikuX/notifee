@@ -20,28 +20,37 @@ bun add @psync/notifee
 
 ### 2a. Android API versions
 
-The values of the compileSdkVersion & targetSdkVersion might need to be changed. compileSdkVersion needs to be at least 34. In addition, if your app is going to request permission on Android 13 via requestPermission, targetSdkVersion needs to be at least 33, as well. These setting are in the file `/android/build.gradle`. 
+The values of `compileSdkVersion` and `targetSdkVersion` might need to be changed. Notifee is built and tested against Android API 36, so use `compileSdkVersion` 36 or higher. `targetSdkVersion` 35 or higher is recommended, and if your app is going to request permission on Android 13 via `requestPermission`, `targetSdkVersion` must be at least 33. These settings are in `/android/build.gradle`.
 
 ```gradle
 buildscript {
   ext {
-    compileSdkVersion = 34 // at least 34
-    targetSdkVersion = 33 // If requesting permission on Android 13 via requestPermission, at least 33 
-    ... 
- } 
- ... 
+    compileSdk = 36
+    targetSdk = 35
+    minSdk = 28
+    ...
+  }
+  ...
 }
 ```
 
-Your android project will fail to build with missing symbols if you do not alter these settings, as we require API33 symbols to support Android 13 notification permissions.
+Your Android project can fail to build with missing symbols if these settings are too low, and newer notification behaviors are only validated against current Android SDK levels.
 
-### 2b. Gradle versions
+### 2b. Build tool versions
 
-The minimum version of gradle is 8.13.x, and the mimimum version of the android gradle plugin is 8.2.x.
+| Tool                        | Minimum Version |
+| --------------------------- | --------------- |
+| Android Gradle Plugin (AGP) | 8.8.2           |
+| Gradle                      | 8.13.x          |
+| Kotlin                      | 2.0.21          |
+| Java (JDK)                  | 17 or 21        |
+| NDK                         | 27.1.12297006+  |
+| Build Tools                 | 36.0.0          |
 
 Your android project will fail to build with errors related to resource compilation / packaging if you do not use a new enough android gradle plugin / gradle combination.
 
 ## 3. Autolinking with React Native
+
 Users on React Native 0.60+ automatically have access to "[autolinking](https://github.com/react-native-community/cli/blob/master/docs/autolinking.md)",
 requiring no further manual installation steps. To automatically link the package, rebuild your project:
 
@@ -58,55 +67,56 @@ npx react-native run-android
 
 ### Expo Support
 
-To be able to run Notifee, it is necessary to compile your Android app with `compileSdkVersion` of 33. As of Expo SDK 48, this is a default, so unless you're overriding the `compileSdkVersion`, there's no additional actions you need to take. 
+Notifee now ships an official Expo config plugin for `expo prebuild`. For Expo projects, it helps to think about setup in two parts:
 
-If, however, you're currently compiling your app for SDK version lower than 33, please utilize the `expo-build-properties` config plugin to bump the `compileSdkVersion` to 33. First, install `expo-build-properties`:
+- Use `expo-build-properties` for app-wide native build settings such as Android SDK levels and the main iOS deployment target.
+- Use `@psync/notifee` for notification-specific native changes such as APNs entitlements, iOS background modes, Notification Service Extension setup, Android notification icons, Android notification sounds, and iOS notification sound bundling.
+
+Install `expo-build-properties` first:
 
 `npx expo install expo-build-properties`
 
-Then, add `expo-build-properties` to the list of plugins in your app's Expo config (`app.json` or `app.config.js`):
+Then add both plugins to your Expo config:
+
 ```js
 {
-  "name": "my app",
-  "plugins": [
-    [
+  "expo": {
+    "plugins": [
+      [
         "expo-build-properties",
         {
           "android": {
             "compileSdkVersion": 36,
-            "targetSdkVersion": 35
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0"
           },
-        },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
       ],
-  ]
-}
-```
-
-Finally, ensure you run `npx expo prebuild` and rebuild your app as described in the ["Adding custom native code"](https://docs.expo.io/workflow/customizing/) guide.
-
-Please note that Notifee needs Java JDK 11+ to build on Android. If you are building the app with EAS, you need to change the image used for the build. You will have to use `image` as `ubuntu-18.04-jdk-11-ndk-r19c` or another image that has jdk 11 as in the following configuration. ([EAS Build Server Configuration](https://docs.expo.dev/build-reference/infrastructure/#image--ubuntu-1804-jdk-8-ndk-r19c--alias--default))
-
-Notifee now ships an official Expo config plugin. If you use Expo with `expo prebuild`, prefer the plugin for native build-time tasks such as:
-
-- creating and maintaining an iOS Notification Service Extension,
-- adding APNs entitlements and iOS background modes,
-- enabling communication-notification capabilities,
-- generating or copying Android notification icon resources, and
-- wiring the iOS extension target into EAS app extension config.
-
-If you only need standard local notifications and standard remote-notification payloads, the plugin can still be minimal — for example, just setting `apsEnvMode` and Android icons.
-
-```json title="app.json"
-{
-  "expo": {
-    "plugins": [
       [
         "@psync/notifee",
         {
           "apsEnvMode": "development",
           "backgroundModes": ["remote-notification"],
-          "enableNotificationServiceExtension": true,
-          "iosDeploymentTarget": "15.1"
+          "androidIcons": [
+            {
+              "name": "ic_stat_notify",
+              "path": "./assets/notifications/ic_stat_notify.png",
+              "type": "small"
+            }
+          ],
+          "androidSoundFiles": [
+            {
+              "name": "message_chime",
+              "path": "./assets/notifications/message_chime.mp3"
+            }
+          ],
+          "iosSoundFiles": ["./assets/notifications/chime.wav"],
+          "notificationServiceExtension": {
+            "enabled": true
+          }
         }
       ]
     ]
@@ -114,15 +124,29 @@ If you only need standard local notifications and standard remote-notification p
 }
 ```
 
-```json title="eas.json"
-{
-  "build": {
-    "dev": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "image": "ubuntu-18.04-jdk-11-ndk-r19c"
-      }
-    }
-}
-```
+**Supported plugin options:**
+
+| Option                             | Type                        | Description                                                                                                                  |
+| ---------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `apsEnvMode`                       | `string`                    | `"development"` or `"production"`. Usually unnecessary if `expo-notifications` plugin sets this.                             |
+| `backgroundModes`                  | `string[]`                  | Opt-in. The plugin does not add `remote-notification` unless set.                                                            |
+| `enableCommunicationNotifications` | `boolean`                   | Enables iOS communication-notification capability.                                                                           |
+| `androidIcons`                     | `Array<{name, path, type}>` | Android notification icon resources. `type` is `"small"` or `"large"`.                                                       |
+| `androidSoundFiles`                | `Array<{name, path}>`       | Copies sound files into `android/app/src/main/res/raw`.                                                                      |
+| `iosSoundFiles`                    | `string[]`                  | Copies iOS notification sounds (`.wav`, `.aif`, `.aiff`, `.caf`) into both app and extension targets.                        |
+| `notificationServiceExtension`     | `object`                    | `{ enabled?, name?, bundleIdentifier?, deploymentTarget?, appGroupName?, customSourceFilePath?, entitlements?, infoPlist? }` |
+| `appleDevTeamId`                   | `string`                    | Usually unnecessary if `expo.ios.appleTeamId` is already set.                                                                |
+
+Notes:
+
+- `androidSoundFiles` copies local files into `android/app/src/main/res/raw`. At runtime, reference the configured resource name such as `sound: "message_chime"` on your channel or notification.
+- Android accepts a broader range of notification sound containers than iOS. In practice, `.mp3`, `.wav`, and `.ogg` are the most predictable Android choices, while iOS notification sounds must stay `.wav`, `.aif`, `.aiff`, or `.caf`.
+- `notificationServiceExtension.deploymentTarget` in the Notifee plugin only changes the generated Notification Service Extension target. Set the main app deployment target with `expo-build-properties` or your native project settings.
+- If `expo.ios.appleTeamId` is already present in your Expo config, you usually do not need to also set `appleDevTeamId` in the Notifee plugin options.
+- When `iosSoundFiles` and `notificationServiceExtension.enabled` are both enabled, the plugin wires those sounds into both the main app target and the extension during the same prebuild pass.
+- Small icons should be transparent, monochrome status-bar assets (PNG). The plugin warns when a small icon source is not a PNG or when an icon source is not square.
+- Flat legacy aliases remain supported for backward compatibility: `enableNotificationServiceExtension`, `notificationServiceExtensionName`, `notificationServiceExtensionBundleIdentifier`, `iosDeploymentTarget`, `customNotificationServiceFilePath`, `appGroupName`, `notificationServiceExtensionEntitlements`, and `notificationServiceExtensionInfoPlist`.
+
+Finally, ensure you run `npx expo prebuild` and rebuild your app as described in [Add custom native code](https://docs.expo.dev/workflow/customizing/) and [Continuous Native Generation](https://docs.expo.dev/workflow/prebuild/).
+
+If you are building with EAS, you usually do not need to pin a custom Android image. Current EAS Build images already use Java 17 by default when you rely on the normal `auto` image selection. If you choose to pin `image` manually, use a current Java 17 image from Expo's [build server infrastructure reference](https://docs.expo.dev/build-reference/infrastructure/).

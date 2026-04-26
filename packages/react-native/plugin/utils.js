@@ -1,7 +1,7 @@
 const path = require('path');
 const {
-  DEFAULT_BACKGROUND_MODES,
   DEFAULT_EXTENSION_NAME,
+  DEFAULT_IOS_DEPLOYMENT_TARGET,
   PACKAGE_NAME,
   VALID_IOS_SOUND_EXTENSIONS,
 } = require('./constants');
@@ -24,31 +24,65 @@ function isValidIOSSoundFileExtension(filePath) {
   return VALID_IOS_SOUND_EXTENSIONS.includes(path.extname(filePath).toLowerCase());
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isValidAndroidResourceName(name) {
+  return /^[a-z0-9_]+$/.test(name);
+}
+
+function getExtensionConfig(options) {
+  return isPlainObject(options.notificationServiceExtension)
+    ? options.notificationServiceExtension
+    : {};
+}
+
 function normalizeProps(config, props) {
   const options = props || {};
   const ios = config.ios || {};
-  const extensionName = options.notificationServiceExtensionName || DEFAULT_EXTENSION_NAME;
+  const extensionConfig = getExtensionConfig(options);
+  const extensionName =
+    extensionConfig.name || options.notificationServiceExtensionName || DEFAULT_EXTENSION_NAME;
   const bundleIdentifier = ios.bundleIdentifier || null;
-  const extensionBundleIdentifier = bundleIdentifier ? `${bundleIdentifier}.${extensionName}` : null;
+  const appleDevTeamId = options.appleDevTeamId || ios.appleTeamId;
+  const enableNotificationServiceExtension =
+    extensionConfig.enabled !== undefined
+      ? extensionConfig.enabled === true
+      : options.enableNotificationServiceExtension === true;
+  const extensionBundleIdentifier =
+    extensionConfig.bundleIdentifier ||
+    options.notificationServiceExtensionBundleIdentifier ||
+    (bundleIdentifier ? `${bundleIdentifier}.${extensionName}` : null);
   const appGroupName =
-    options.appGroupName || (bundleIdentifier ? `group.${bundleIdentifier}.notifee` : null);
+    extensionConfig.appGroupName ||
+    options.appGroupName ||
+    (bundleIdentifier ? `group.${bundleIdentifier}.notifee` : null);
 
   return {
     apsEnvMode: options.apsEnvMode,
     androidIcons: options.androidIcons || [],
+    androidSoundFiles: options.androidSoundFiles || [],
     appGroupName,
-    appleDevTeamId: options.appleDevTeamId,
-    backgroundModes:
-      options.backgroundModes === undefined ? DEFAULT_BACKGROUND_MODES.slice() : options.backgroundModes,
+    appleDevTeamId,
+    backgroundModes: options.backgroundModes,
     bundleIdentifier,
-    customNotificationServiceFilePath: options.customNotificationServiceFilePath,
+    customNotificationServiceFilePath:
+      extensionConfig.customSourceFilePath || options.customNotificationServiceFilePath,
     enableCommunicationNotifications: options.enableCommunicationNotifications === true,
-    enableNotificationServiceExtension: options.enableNotificationServiceExtension === true,
+    enableNotificationServiceExtension,
     extensionBundleIdentifier,
+    extensionEntitlements:
+      extensionConfig.entitlements || options.notificationServiceExtensionEntitlements || {},
+    extensionInfoPlist:
+      extensionConfig.infoPlist || options.notificationServiceExtensionInfoPlist || {},
     extensionName,
     iosSoundFiles: options.iosSoundFiles || [],
-    iosBuildNumber: ios.buildNumber || null,
-    iosDeploymentTarget: options.iosDeploymentTarget,
+    iosDeploymentTarget:
+      extensionConfig.deploymentTarget ||
+      options.iosDeploymentTarget ||
+      ios.deploymentTarget ||
+      DEFAULT_IOS_DEPLOYMENT_TARGET,
     verbose: options.verbose === true,
   };
 }
@@ -56,12 +90,16 @@ function normalizeProps(config, props) {
 function validateProps(normalizedProps, rawProps = {}) {
   const {
     androidIcons,
+    androidSoundFiles,
     apsEnvMode,
     appleDevTeamId,
     backgroundModes,
     bundleIdentifier,
     customNotificationServiceFilePath,
     enableNotificationServiceExtension,
+    extensionBundleIdentifier,
+    extensionEntitlements,
+    extensionInfoPlist,
     iosSoundFiles,
     iosDeploymentTarget,
   } = normalizedProps;
@@ -78,6 +116,14 @@ function validateProps(normalizedProps, rawProps = {}) {
     throwPluginError("'appleDevTeamId' must be a string.");
   }
 
+  if (
+    extensionBundleIdentifier !== undefined &&
+    extensionBundleIdentifier !== null &&
+    typeof extensionBundleIdentifier !== 'string'
+  ) {
+    throwPluginError("'notificationServiceExtensionBundleIdentifier' must be a string.");
+  }
+
   if (backgroundModes !== undefined && !Array.isArray(backgroundModes)) {
     throwPluginError("'backgroundModes' must be an array of strings.");
   }
@@ -86,8 +132,19 @@ function validateProps(normalizedProps, rawProps = {}) {
     throwPluginError("'backgroundModes' must only contain strings.");
   }
 
-  if (customNotificationServiceFilePath !== undefined && typeof customNotificationServiceFilePath !== 'string') {
+  if (
+    customNotificationServiceFilePath !== undefined &&
+    typeof customNotificationServiceFilePath !== 'string'
+  ) {
     throwPluginError("'customNotificationServiceFilePath' must be a string.");
+  }
+
+  if (!isPlainObject(extensionEntitlements)) {
+    throwPluginError("'notificationServiceExtensionEntitlements' must be an object.");
+  }
+
+  if (!isPlainObject(extensionInfoPlist)) {
+    throwPluginError("'notificationServiceExtensionInfoPlist' must be an object.");
   }
 
   if (!Array.isArray(iosSoundFiles)) {
@@ -110,6 +167,10 @@ function validateProps(normalizedProps, rawProps = {}) {
     throwPluginError("'androidIcons' must be an array.");
   }
 
+  if (androidSoundFiles !== undefined && !Array.isArray(androidSoundFiles)) {
+    throwPluginError("'androidSoundFiles' must be an array.");
+  }
+
   for (const icon of androidIcons) {
     if (!icon || typeof icon !== 'object') {
       throwPluginError("Each entry in 'androidIcons' must be an object.");
@@ -128,10 +189,37 @@ function validateProps(normalizedProps, rawProps = {}) {
     }
   }
 
+  for (const sound of androidSoundFiles) {
+    if (!sound || typeof sound !== 'object') {
+      throwPluginError("Each entry in 'androidSoundFiles' must be an object.");
+    }
+
+    if (typeof sound.name !== 'string' || sound.name.length === 0) {
+      throwPluginError("Each Android sound must include a non-empty string 'name'.");
+    }
+
+    if (!isValidAndroidResourceName(sound.name)) {
+      throwPluginError(
+        `Android sound '${sound.name}' must use only lowercase letters, numbers, and underscores.`,
+      );
+    }
+
+    if (typeof sound.path !== 'string' || sound.path.length === 0) {
+      throwPluginError(`Android sound '${sound.name}' must include a non-empty string 'path'.`);
+    }
+  }
+
   if (enableNotificationServiceExtension && !bundleIdentifier) {
     throwPluginError(
       "iOS 'bundleIdentifier' must be defined in the Expo config when 'enableNotificationServiceExtension' is true.",
     );
+  }
+
+  if (
+    rawProps.notificationServiceExtension !== undefined &&
+    !isPlainObject(rawProps.notificationServiceExtension)
+  ) {
+    throwPluginError("'notificationServiceExtension' must be an object when provided.");
   }
 
   if (
@@ -142,12 +230,9 @@ function validateProps(normalizedProps, rawProps = {}) {
   }
 }
 
-function getPackageRoot() {
-  return path.dirname(require.resolve(`${PACKAGE_NAME}/package.json`));
-}
-
 module.exports = {
-  getPackageRoot,
+  isPlainObject,
+  isValidAndroidResourceName,
   log,
   normalizeProps,
   throwPluginError,

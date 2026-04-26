@@ -21,12 +21,12 @@ A feature rich Android & iOS notifications library for React Native.
 
 ## Platform Requirements
 
-| Requirement | Minimum Version |
-|-------------|-----------------|
-| React Native | 0.83+ (New Architecture only!) |
-| iOS Deployment Target | 15.1+ |
-| Android minSdk | 28+ |
-| Xcode | 16.2+ (for iOS development) |
+| Requirement           | Minimum Version                |
+| --------------------- | ------------------------------ |
+| React Native          | 0.83+ (New Architecture only!) |
+| iOS Deployment Target | 15.1+                          |
+| Android minSdk        | 28+                            |
+| Xcode                 | 16.2+ (for iOS development)    |
 
 ## Installation
 
@@ -46,17 +46,28 @@ bun add @psync/notifee
 
 `@psync/notifee` now ships an official Expo config plugin for `expo prebuild`.
 
-Add it to your Expo config:
+Add it to your Expo config. When you need to align the main app target with Notifee's native requirements, pair it with `expo-build-properties`:
 
 ```js
 export default {
   expo: {
     plugins: [
       [
+        'expo-build-properties',
+        {
+          android: {
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
+            buildToolsVersion: '36.0.0',
+          },
+          ios: {
+            deploymentTarget: '15.1',
+          },
+        },
+      ],
+      [
         '@psync/notifee',
         {
-          apsEnvMode: 'development',
-          backgroundModes: ['remote-notification'],
           androidIcons: [
             {
               name: 'ic_stat_notify',
@@ -64,9 +75,17 @@ export default {
               type: 'small',
             },
           ],
-          enableNotificationServiceExtension: true,
+          androidSoundFiles: [
+            {
+              name: 'message_chime',
+              path: './assets/notifications/message_chime.mp3',
+            },
+          ],
+          backgroundModes: ['remote-notification'],
           iosSoundFiles: ['./assets/notifications/chime.wav'],
-          iosDeploymentTarget: '15.1',
+          notificationServiceExtension: {
+            enabled: true,
+          },
         },
       ],
     ],
@@ -80,16 +99,23 @@ Supported plugin options:
 - `backgroundModes?: string[]`
 - `enableCommunicationNotifications?: boolean`
 - `androidIcons?: Array<{ name: string; path: string; type: 'small' | 'large' }>`
+- `androidSoundFiles?: Array<{ name: string; path: string }>`
 - `iosSoundFiles?: string[]`
-- `enableNotificationServiceExtension?: boolean`
-- `iosDeploymentTarget?: string`
-- `notificationServiceExtensionName?: string`
-- `customNotificationServiceFilePath?: string`
+- `notificationServiceExtension?: { enabled?: boolean; name?: string; bundleIdentifier?: string; deploymentTarget?: string; appGroupName?: string; customSourceFilePath?: string; entitlements?: Record<string, unknown>; infoPlist?: Record<string, unknown> }`
 - `appleDevTeamId?: string`
-- `appGroupName?: string`
 - `verbose?: boolean`
 
-When `enableNotificationServiceExtension` is enabled, the plugin will:
+Notes:
+
+- `apsEnvMode` is optional and usually unnecessary if your project already uses the `expo-notifications` plugin or you manage `expo.ios.entitlements['aps-environment']` yourself.
+- `backgroundModes` is opt-in. The plugin does not add `remote-notification` unless you set it.
+- `androidSoundFiles` copies local files into `android/app/src/main/res/raw`. At runtime, reference the resource name you configured, for example `sound: 'message_chime'`.
+- Android accepts a broader range of notification sound containers than iOS. In practice, `.mp3`, `.wav`, and `.ogg` are the most predictable Android choices, while iOS notification sounds must remain `.wav`, `.aif`, `.aiff`, or `.caf`.
+- `notificationServiceExtension.deploymentTarget` only changes the generated Notification Service Extension target. Set the main app deployment target with `expo-build-properties` or your native project settings.
+- `appleDevTeamId` is usually unnecessary if `expo.ios.appleTeamId` is already set in your Expo config.
+- Flat legacy aliases remain supported for backward compatibility: `enableNotificationServiceExtension`, `notificationServiceExtensionName`, `notificationServiceExtensionBundleIdentifier`, `iosDeploymentTarget`, `customNotificationServiceFilePath`, `appGroupName`, `notificationServiceExtensionEntitlements`, and `notificationServiceExtensionInfoPlist`.
+
+When the notification service extension is enabled (`notificationServiceExtension.enabled` or the legacy `enableNotificationServiceExtension` alias), the plugin will:
 
 - create an iOS Notification Service Extension target,
 - add the required `RNNotifeeCore` Podfile target with `$NotifeeExtension = true`,
@@ -97,7 +123,7 @@ When `enableNotificationServiceExtension` is enabled, the plugin will:
 - add application-group entitlements for the app and extension, and
 - register the extension in `expo.extra.eas.build.experimental.ios.appExtensions`.
 
-When `iosSoundFiles` is set, the plugin will copy supported iOS notification sound assets (`.wav`, `.aif`, `.aiff`, `.caf`) into the generated native iOS project, and also into the Notification Service Extension target when extension automation is enabled. MP3 files are not supported here; convert them to one of the supported formats first.
+When `iosSoundFiles` is set, the plugin will copy supported iOS notification sound assets (`.wav`, `.aif`, `.aiff`, `.caf`) into the generated native iOS project, and also into the Notification Service Extension target when extension automation is enabled, during the same prebuild pass. MP3 files are not supported here; convert them to one of the supported formats first.
 
 Android icon notes:
 
@@ -130,13 +156,13 @@ The APIs for Android allow for creating rich, styled and highly interactive noti
 
 Below you'll find guides that cover the supported iOS features.
 
-| Topic                                                             |                                                                          |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [Appearance](https://notifee.app/react-native/docs/ios/appearance)           | Change how the notification is displayed to your users.       |
-| [Behaviour](https://notifee.app/react-native/docs/ios/behaviour)            | Control how notifications behave when they are displayed to a device; sound, critical alerts etc.  |
-| [Categories](https://notifee.app/react-native/docs/ios/categories) | Create & assign categories to notifications.          |
-| [Interaction](https://notifee.app/react-native/docs/ios/interaction)                 | Handle user interaction with your notifications. |                                                    |
-| [Permissions](https://notifee.app/react-native/docs/ios/permissions)                 | Request permission from your application users to display notifications. |                                                    |
+| Topic                                                                |                                                                                                   |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --- |
+| [Appearance](https://notifee.app/react-native/docs/ios/appearance)   | Change how the notification is displayed to your users.                                           |
+| [Behaviour](https://notifee.app/react-native/docs/ios/behaviour)     | Control how notifications behave when they are displayed to a device; sound, critical alerts etc. |
+| [Categories](https://notifee.app/react-native/docs/ios/categories)   | Create & assign categories to notifications.                                                      |
+| [Interaction](https://notifee.app/react-native/docs/ios/interaction) | Handle user interaction with your notifications.                                                  |     |
+| [Permissions](https://notifee.app/react-native/docs/ios/permissions) | Request permission from your application users to display notifications.                          |     |
 
 ### Jest Testing
 
@@ -167,7 +193,7 @@ setupFiles: ['<rootDir>/jest.setup.js'],
 You can then add the following line to that setup file to mock `notifee`:
 
 ```js
-jest.mock('@psync/notifee', () => require('@psync/notifee/jest-mock'))
+jest.mock('@psync/notifee', () => require('@psync/notifee/jest-mock'));
 ```
 
 You will also need to add `@psync/notifee` to `transformIgnorePatterns` in your config file (`jest.config.js`):

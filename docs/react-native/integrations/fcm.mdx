@@ -1,6 +1,6 @@
 ---
 title: Firebase Cloud Messaging (FCM)
-description: Integrate Firebase Cloud Messaging and display notifications with Notifee.
+description: Complete guide to integrating Firebase Cloud Messaging with Notifee for React Native. Covers setup, configuration, server-side payloads, and troubleshooting.
 ---
 
 [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging) (FCM) is a messaging solution
@@ -10,22 +10,220 @@ Using FCM, you can send data payloads (via a message) to a device for a specific
 a payload of up to 4KB to a client. FCM also provides features to build basic notifications from the Firebase console,
 versatile message targeting, client-to-client communication and web notifications support.
 
-# React Native Firebase
+> **Version Guidance:** This guide uses **React Native Firebase v21+** with **Firebase Android BoM 23.8.8** as the recommended default. Newer BoM versions are compatible but 23.8.8 provides a stable baseline.
 
-[React Native Firebase](https://rnfirebase.io/) is the officially recommended library for
-integrating React Native with [Firebase](https://firebase.google.com/). Using React Native Firebase, we can easily
-integrate with FCM and display notifications with Notifee.
+---
 
-## Installation & Setup
+## Comprehensive Firebase Setup Guide
 
-To get started, you must have the following prerequisites setup and installed:
+### 1. Create a Firebase Project
 
-- An active [Firebase](https://console.firebase.google.com/) project.
-- The [`@react-native-firebase/app`](https://www.npmjs.com/package/@react-native-firebase/app) package installed & setup.
-- The [`@react-native-firebase/messaging`](https://www.npmjs.com/package/@react-native-firebase/messaging) package installed & setup.
+1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (or use an existing one).
+2. Register your Android app with the package name (e.g. `com.example.app`).
+3. Download the `google-services.json` file and place it in `android/app/`.
+4. Register your iOS app with the Bundle ID (e.g. `com.example.app`).
+5. Download the `GoogleService-Info.plist` file and add it to your Xcode project via `ios/YourApp/`.
 
-For more information on how to get started with React Native Firebase, check out the [quick start](https://rnfirebase.io)
-guide for integrating with your Firebase project, and the steps required to install the [Messaging package](https://rnfirebase.io/messaging/usage).
+### 2. Install React Native Firebase
+
+Install the core Firebase app and messaging packages. The latest stable versions work with Firebase Android BoM 23.8.8 and higher.
+
+```bash
+# Using npm (v21+ recommended)
+npm install --save @react-native-firebase/app @react-native-firebase/messaging
+
+# Using Bun
+bun add @react-native-firebase/app @react-native-firebase/messaging
+
+# Using Yarn
+yarn add @react-native-firebase/app @react-native-firebase/messaging
+```
+
+> **Note:** React Native Firebase v21+ introduces modular APIs and improved tree-shaking. If upgrading from v18 or earlier, consult the [React Native Firebase migration guide](https://rnfirebase.io/migrating-to-v21).
+
+### 3. Android Configuration
+
+**a) Add the Google Services plugin** to `android/build.gradle` (project-level):
+
+```gradle
+buildscript {
+  dependencies {
+    // ... other dependencies
+    classpath("com.google.gms:google-services:4.4.2")
+  }
+}
+```
+
+**b) Apply the Google Services plugin** in `android/app/build.gradle`:
+
+Using the plugins DSL (recommended for Gradle 7.0+):
+
+```gradle
+plugins {
+  id "com.android.application"
+  id "com.google.gms.google-services"  // Add this line
+  // ... other plugins
+}
+```
+
+Or using the legacy syntax at the bottom of the file:
+
+```gradle
+apply plugin: "com.google.gms.google-services"
+```
+
+**c) Configure Firebase BoM** (optional — recommended for version consistency):
+
+Pin the Firebase Android BoM to ensure consistent library versions across your app. Add this to `android/app/build.gradle`:
+
+```gradle
+dependencies {
+  // Import the BoM to manage Firebase library versions
+  implementation platform("com.google.firebase:firebase-bom:23.8.8")
+
+  // Declare Firebase dependencies without versions (managed by BoM)
+  implementation "com.google.firebase:firebase-messaging"
+  implementation "com.google.firebase:firebase-analytics"  // Optional
+
+  // ... other Firebase dependencies
+}
+```
+
+> **Why use the BoM?** The Bill of Materials ensures all Firebase libraries use compatible versions. Without it, `@react-native-firebase/app` resolves versions automatically, but explicit BoM pinning is recommended for reproducible builds.
+
+> **Updating versions:** To use a newer BoM, change `23.8.8` to the desired version (e.g., `33.0.0`). See [Firebase Android BoM release notes](https://firebase.google.com/support/release-notes/android).
+
+### 4. iOS Configuration
+
+**a) Add `GoogleService-Info.plist`** to your Xcode project:
+
+1. Download `GoogleService-Info.plist` from your Firebase project settings
+2. In Xcode, right-click your project folder and select **Add Files to "YourApp"...**
+3. Select the downloaded file and ensure **"Copy items if needed"** is checked
+4. Verify the file appears in your app target's **Build Phases > Copy Bundle Resources**
+
+**b) Initialize Firebase** in your AppDelegate:
+
+For Swift (`ios/YourApp/AppDelegate.swift`):
+
+```swift
+import Firebase
+
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    FirebaseApp.configure()
+    // ... rest of your setup
+    return true
+  }
+}
+```
+
+For Objective-C (`ios/YourApp/AppDelegate.mm`):
+
+```objc
+#import <Firebase.h>
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  [FIRApp configure];
+  // ... rest of your setup
+  return YES;
+}
+
+@end
+```
+
+**c) Enable Push Notifications capabilities** in Xcode:
+
+1. Select your project in the navigator, then your app target
+2. Go to **Signing & Capabilities**
+3. Click **+ Capability** and add **Push Notifications**
+4. Add **Background Modes** capability and check:
+   - ☑️ Remote notifications (required for background FCM handling)
+   - ☑️ Processing (optional, for notification service extensions)
+
+**d) Link APNs with FCM (Required for iOS):**
+
+FCM uses Apple Push Notification service (APNs) to deliver messages. You must upload your APNs authentication key or certificate to Firebase:
+
+1. In Firebase Console, go to **Project Settings > Cloud Messaging**
+2. Under **Apple app configuration**, upload your APNs Authentication Key (.p8 file) OR APNs Certificates (.p12)
+   - **Recommended:** Use APNs Authentication Key (does not expire, works for all apps)
+   - Your key can be generated at [Apple Developer Center](https://developer.apple.com/account/resources/authkeys/list)
+3. Enter your Key ID and Team ID
+
+> **Important:** Without proper APNs configuration, FCM messages will not reach iOS devices. Test APNs independently first if possible.
+
+### 5. Verify Installation
+
+Test your Firebase setup before proceeding:
+
+```js
+import messaging from '@react-native-firebase/messaging';
+
+async function verifyFCMSetup() {
+  try {
+    // Check permission status
+    const authStatus = await messaging().requestPermission();
+    console.log('FCM permission status:', authStatus);
+
+    // Get FCM token (requires iOS device/simulator for iOS)
+    const token = await messaging().getToken();
+    console.log('FCM Token:', token);
+
+    // Optional: Register for remote messages on iOS
+    if (Platform.OS === 'ios') {
+      await messaging().registerDeviceForRemoteMessages();
+    }
+
+    return true;
+  } catch (error) {
+    console.error('FCM setup failed:', error);
+    return false;
+  }
+}
+```
+
+Run your app and check the console for:
+- Permission status (1 = granted on iOS, 1 = authorized on Android)
+- Valid FCM token (format: `dC...` or similar long string)
+- No Firebase initialization errors
+
+**Common verification issues:**
+- **iOS:** If `getToken()` hangs, check APNs configuration in Firebase Console
+- **Android:** If `google-services.json` is missing or malformed, the app will crash on launch
+- **Both:** Ensure `GoogleService-Info.plist` (iOS) and `google-services.json` (Android) are in the correct locations
+
+---
+
+### 6. Expo Configuration (Optional)
+
+If using Expo with `expo prebuild`, Notifee provides an official config plugin to automate FCM setup:
+
+```json
+{
+  "expo": {
+    "plugins": [
+      ["@psync/notifee", {
+        "backgroundModes": ["remote-notification"]
+      }]
+    ]
+  }
+}
+```
+
+The plugin automatically:
+- Adds APNs entitlements to your iOS app
+- Configures background modes for remote notifications
+- Handles Notification Service Extension setup (if enabled)
+
+For detailed Expo setup, see the [Installation guide](/react-native/docs/installation#expo-support).
+
+---
 
 ## Subscribing to messages
 
@@ -42,7 +240,7 @@ the same function when called so we don't have to worry about the application's 
 ```js
 import messaging from '@react-native-firebase/messaging';
 
-// Note that an async function or a function that returns a Promise 
+// Note that an async function or a function that returns a Promise
 // is required for both subscribers.
 async function onMessageReceived(message) {
   // Do something
@@ -52,10 +250,12 @@ messaging().onMessage(onMessageReceived);
 messaging().setBackgroundMessageHandler(onMessageReceived);
 ```
 
+---
+
 ## Sending messages
 
 In most cases, messages will be sent via the FCM service using an external service running alongside your application
-(e.g. an API). To send a message, we need to [create a messaging token](#Create-messaging-token) that is unique to each device . Once acquired,
+(e.g. an API). To send a message, we need to [create a messaging token](#create-messaging-token) that is unique to each device. Once acquired,
 it then needs to be saved to a datastore (e.g. an external database). When the time comes to send a message, the
 token is read from the datastore and a data payload is sent via FCM to the specific device with the token assigned.
 
@@ -138,13 +338,233 @@ function onMessageReceived(message) {
 }
 ```
 
-## Integrating Notifee
+---
 
-Integrating Notifee with an FCM payload comes down to personal preference. You could send an entire Notification object
-with the message, or use it to construct your own message.
+## Integrating with Notifee
 
-Data payloads via the messaging API only accept a string, key/value pairs where the value is always a `string` type. Please bear in mind,
-each property in the `data` object sent via FCM must be a string as noted below.
+Notifee provides first-class FCM support through the `handleFcmMessage` API. This method accepts a raw
+`RemoteMessage` object from `@react-native-firebase/messaging` and automatically reconstructs a
+Notifee notification from it.
+
+### Basic integration
+
+```js
+import notifee from '@psync/notifee';
+import messaging from '@react-native-firebase/messaging';
+
+// Optional: configure defaults used by handleFcmMessage
+async function bootstrap() {
+  await notifee.setFcmConfig({
+    defaultChannelId: 'default',
+    defaultPressAction: { id: 'default' },
+    // fallbackBehavior: 'ignore', // uncomment to skip displaying messages without notifee_options
+  });
+}
+
+async function onMessageReceived(remoteMessage) {
+  // Let Notifee reconstruct and display the notification
+  await notifee.handleFcmMessage(remoteMessage);
+}
+
+// Subscribe to foreground and background messages
+messaging().onMessage(onMessageReceived);
+messaging().setBackgroundMessageHandler(onMessageReceived);
+```
+
+### Server-side payload structure
+
+Notifee recognizes a special `notifee_options` key in the FCM data payload. This key contains a
+JSON string representing the notification structure:
+
+```js
+// Node.js (firebase-admin)
+await admin.messaging().sendMulticast({
+  tokens,
+  data: {
+    // Reserved by Notifee — the SDK parses this into a notification
+    notifee_options: JSON.stringify({
+      _v: 1,
+      id: 'custom-notification-id',
+      title: 'Hello from FCM!',
+      body: 'This notification was built via notifee_options',
+      android: {
+        channelId: 'default',
+        smallIcon: 'ic_stat_notify',
+        pressAction: { id: 'default' },
+        actions: [
+          {
+            title: 'Mark as Read',
+            pressAction: { id: 'read' },
+          },
+        ],
+      },
+      ios: {
+        sound: 'default',
+        categoryId: 'message',
+        interruptionLevel: 'timeSensitive',
+        attachments: [{ url: 'https://example.com/image.png', identifier: 'img-1' }],
+      },
+    }),
+
+    // Custom data forwarded to notification.data (non-reserved keys pass through automatically)
+    type: 'new_message',
+    chatId: 'chat_123',
+  },
+});
+```
+
+Supported `notifee_options` fields:
+
+| Field     | Type     | Description                                                                             |
+| --------- | -------- | --------------------------------------------------------------------------------------- |
+| `_v`      | `number` | Payload version. Currently `1`. Future versions are warned about but still processed.   |
+| `id`      | `string` | Custom notification ID. Falls back to `remoteMessage.messageId`.                        |
+| `title`   | `string` | Notification title. Falls back to `remoteMessage.notification.title` then `data.title`. |
+| `body`    | `string` | Notification body. Falls back to `remoteMessage.notification.body` then `data.body`.    |
+| `android` | `object` | Android-specific configuration (see below).                                             |
+| `ios`     | `object` | iOS-specific configuration (see below).                                                 |
+
+**Android options** (under `android`):
+
+| Property      | Type       | Description                                                                                                |
+| ------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| `channelId`   | `string`   | Android channel ID. Falls back to `config.defaultChannelId`.                                               |
+| `pressAction` | `object`   | Press action config. Falls back to `config.defaultPressAction`.                                            |
+| `smallIcon`   | `string`   | Small icon resource name.                                                                                  |
+| `largeIcon`   | `string`   | Large icon URL or resource name.                                                                           |
+| `color`       | `string`   | Accent color (hex or name).                                                                                |
+| `actions`     | `object[]` | Quick action buttons.                                                                                      |
+| `style`       | `object`   | Rich notification style. `{ type: "BIG_TEXT", text: "..." }` or `{ type: "BIG_PICTURE", picture: "..." }`. |
+
+**iOS options** (under `ios`):
+
+| Property            | Type       | Description                                                      |
+| ------------------- | ---------- | ---------------------------------------------------------------- |
+| `sound`             | `string`   | Sound name (e.g. `"default"` or a bundled sound).                |
+| `categoryId`        | `string`   | Category identifier for actions.                                 |
+| `threadId`          | `string`   | Thread identifier for grouping.                                  |
+| `interruptionLevel` | `string`   | One of `"active"`, `"critical"`, `"passive"`, `"timeSensitive"`. |
+| `attachments`       | `object[]` | Array of `{ url: string, identifier?: string }`.                 |
+
+### Custom data forwarding
+
+Non-reserved keys in `data` are forwarded to `notification.data` automatically. Additionally, a
+`notifee_data` key can contain a JSON string of key-value pairs that get merged into the data object
+(after stripping the reserved `notifee_options` and `notifee_data` keys):
+
+```js
+// Server payload
+data: {
+  notifee_options: '{...}',      // consumed by Notifee
+  notifee_data: '{"safe":"blob"}', // merged into notification.data
+  safe: 'top',                   // forwarded directly
+}
+// Result: notification.data = { safe: "blob" }
+```
+
+### Configuring defaults with `setFcmConfig`
+
+The `setFcmConfig` method configures fallback values used by `handleFcmMessage`:
+
+```js
+import notifee from '@psync/notifee';
+
+await notifee.setFcmConfig({
+  // Android fallback channel when the payload has none
+  defaultChannelId: 'default',
+
+  // Android fallback press action
+  defaultPressAction: { id: 'default', launchActivity: 'default' },
+
+  // When 'ignore', messages without notifee_options are not displayed
+  fallbackBehavior: 'display', // or 'ignore'
+
+  // iOS-specific options
+  ios: {
+    // Suppress foreground banner (Notifee won't display; useful when
+    // the OS already shows a banner for the push)
+    suppressForegroundBanner: false,
+  },
+});
+```
+
+### iOS Remote Notification Interception Control
+
+By default, Notifee intercepts iOS remote notification tap events to provide consistent
+handling across platforms. Use `setNotificationConfig` to customize this behavior:
+
+```js
+import notifee from '@psync/notifee';
+
+// Option 1: Let Firebase Messaging handle remote notification taps
+// (Use when you need @react-native-firebase/messaging methods like
+// onNotificationOpenedApp / getInitialNotification)
+await notifee.setNotificationConfig({
+  ios: {
+    interceptRemoteNotifications: false,  // Pass through to RNFB
+  },
+});
+
+// Option 2: Notifee handles remote notifications (default behavior)
+await notifee.setNotificationConfig({
+  ios: {
+    interceptRemoteNotifications: true,   // Notifee handles taps
+  },
+});
+```
+
+**When to disable interception:**
+- Using `@react-native-firebase/messaging` navigation handling
+- Relying on `onNotificationOpenedApp` or `getInitialNotification`
+- Have existing RNFB-based notification routing
+
+**Important:** Local notifications created via `displayNotification()` or `createTriggerNotification()`
+are always handled by Notifee regardless of this setting. Only remote notifications (FCM/APNs)
+are affected by `interceptRemoteNotifications`.
+
+### Full integration example
+
+```js
+// index.js
+import { AppRegistry } from 'react-native';
+import notifee from '@psync/notifee';
+import messaging from '@react-native-firebase/messaging';
+import App from './App';
+
+// Configure Notifee for FCM
+async function setupFCM() {
+  await notifee.setFcmConfig({
+    defaultChannelId: 'default',
+    defaultPressAction: { id: 'default' },
+  });
+
+  // Optional: let RNFB handle iOS tap events
+  // await notifee.setNotificationConfig({
+  //   ios: { interceptRemoteNotifications: false },
+  // });
+}
+
+// Unified handler for foreground & background FCM messages
+async function onMessageReceived(remoteMessage) {
+  const displayId = await notifee.handleFcmMessage(remoteMessage);
+  if (displayId) {
+    console.log('Displayed notification:', displayId);
+  }
+}
+
+// Register handlers
+messaging().onMessage(onMessageReceived);
+messaging().setBackgroundMessageHandler(onMessageReceived);
+
+AppRegistry.registerComponent('app', () => App);
+```
+
+---
+
+## Integrating without `handleFcmMessage`
+
+If you prefer manual control over notification construction, you can still use the
+traditional approach — parsing FCM data yourself and calling `displayNotification` directly.
 
 ### Server creation
 
@@ -224,9 +644,141 @@ messaging().onMessage(onMessageReceived);
 messaging().setBackgroundMessageHandler(onMessageReceived);
 ```
 
+---
+
+## Troubleshooting
+
+### Android Issues
+
+#### Notification not showing
+
+- **Ensure channel exists:** The `channelId` in your payload must match a channel created via `createChannel()`
+- **Check google-services.json:** Verify it's in `android/app/` and valid (not corrupted)
+- **Verify plugin application:** Confirm `com.google.gms.google-services` is applied in `android/app/build.gradle`
+- **Check notification permission:** On Android 13+, request `POST_NOTIFICATIONS` permission:
+  ```js
+  import { PermissionsAndroid } from 'react-native';
+  await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+  ```
+- **Review notification importance:** Channels with `importance: 0` (none) won't show notifications
+
+#### App crashes on startup
+
+- **Missing google-services.json:** Check file location and validity
+- **BoM version conflict:** Ensure all Firebase libraries use compatible versions via BoM
+- **ProGuard/R8 minification:** Add Firebase rules to `android/app/proguard-rules.pro`:
+  ```
+  -keep class com.google.firebase.** { *; }
+  -keep class com.google.android.gms.** { *; }
+  ```
+
+### iOS Issues
+
+#### Notification not showing in foreground
+
+- iOS does not display notifications in the foreground by default. Use Notifee's
+  `handleFcmMessage` which calls `displayNotification` to show them.
+- If using the OS banner for remote pushes, set `suppressForegroundBanner: true`
+  in `setFcmConfig` to avoid double-display.
+- Ensure `content-available: 1` is set in your FCM payload for foreground delivery
+
+#### `onNotificationOpenedApp` / `getInitialNotification` not firing
+
+- Notifee intercepts remote notification taps by default. Configure `setNotificationConfig`:
+  ```js
+  await notifee.setNotificationConfig({
+    ios: { interceptRemoteNotifications: false },
+  });
+  ```
+- This passes remote notification handling to `@react-native-firebase/messaging`
+
+#### FCM token is null / getToken() hangs
+
+- **APNs not configured:** Upload your APNs key/certificate in Firebase Console
+- **Simulator limitations:** FCM token may fail on iOS Simulator; use a physical device
+- **Provisioning profile:** Ensure your app uses a provisioning profile with push notifications enabled
+- **Team ID mismatch:** Verify the Team ID in Firebase Console matches your Apple Developer account
+
+### Both Platforms
+
+#### Payload parsing fails
+
+- **Invalid JSON:** Ensure `notifee_options` is a valid JSON **string** in the `data` object
+- **Non-string values:** FCM `data` payloads only accept string values - convert numbers/booleans:
+  ```js
+  // Server-side (Node.js)
+  data: {
+    count: "5",        // ✓ String
+    enabled: "true",   // ✓ String
+    nested: JSON.stringify({ key: "value" })  // ✓ Escaped JSON string
+  }
+  ```
+- **Missing `_v`:** Include `"_v": 1` in `notifee_options` for version compatibility
+- **Debug logging:** Enable Notifee logging to see parse warnings:
+  ```js
+  console.warn = (...args) => console.log('WARN:', ...args);
+  ```
+
+#### Background messages not received
+
+- **Android:** Check `AndroidManifest.xml` for proper service declarations
+- **iOS:** Verify "Remote notifications" background mode is enabled in Xcode capabilities
+- **iOS:** Ensure `content-available: 1` is set in your FCM payload
+- **Both:** Test with a real device (simulators have limited background capability)
+
+#### Notification not triggering action on press
+
+- Verify `pressAction.id` matches the action registered in your app
+- For iOS, ensure the category is created before the notification arrives
+- Check that your event listener is registered early in app lifecycle
+
+### Testing Tools
+
+1. **Firebase Console:** Send test notifications from Cloud Messaging > Notifications
+2. **cURL:** Send direct FCM API requests:
+   ```bash
+   curl -X POST https://fcm.googleapis.com/fcm/send \
+     -H "Authorization: key=YOUR_SERVER_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"to":"DEVICE_TOKEN","data":{"test":"value"}}'
+   ```
+3. **React Native Firebase:** Use `messaging().sendMessage()` for local testing
+
+---
+
 ## Further reading
 
 FCM provides great flexibility when sending messages to devices. If required you can send messages to
 [specific devices](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-specific-devices),
 or to devices [subscribed to topics](https://firebase.google.com/docs/cloud-messaging/send-message#send-messages-to-topics),
 or even via [batched messages](https://firebase.google.com/docs/cloud-messaging/send-message#send-a-batch-of-messages).
+
+### Official Documentation
+
+- [React Native Firebase Documentation](https://rnfirebase.io/)
+- [React Native Firebase iOS Setup](https://rnfirebase.io/messaging/usage/ios-setup)
+- [Firebase Cloud Messaging Guide](https://firebase.google.com/docs/cloud-messaging)
+- [Firebase Android SDK Setup](https://firebase.google.com/docs/android/setup)
+- [Firebase iOS SDK Setup](https://firebase.google.com/docs/ios/setup)
+
+### Release Notes & Versioning
+
+- [Firebase Android BoM Release Notes](https://firebase.google.com/support/release-notes/android) - Track BoM updates
+- [Firebase iOS SDK Release Notes](https://firebase.google.com/support/release-notes/ios)
+- [React Native Firebase Changelog](https://github.com/invertase/react-native-firebase/blob/main/CHANGELOG.md)
+
+### Notifee-Specific Resources
+
+- [Notifee setFcmConfig API Reference](/react-native/reference)
+- [Notifee setNotificationConfig API Reference](/react-native/reference) - iOS interception control
+- [iOS Remote Notification Support](/react-native/docs/ios/remote-notification-support) - Notification Service Extension setup
+- [Notifee Installation Guide](/react-native/docs/installation) - Including Expo configuration
+
+### Best Practices
+
+1. **Test on real devices:** Simulators have limited FCM/APNs support
+2. **Version lock for production:** Pin exact BoM versions in `build.gradle` for reproducible builds
+3. **Monitor FCM token refreshes:** Always listen to `onTokenRefresh` to update your backend
+4. **Handle notification permissions gracefully:** Request permission at appropriate UX moments
+5. **Validate payloads server-side:** Ensure `notifee_options` is valid JSON before sending
+6. **Use topics for broadcasts:** When sending to many devices, prefer topics over token lists

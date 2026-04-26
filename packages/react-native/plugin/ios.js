@@ -9,7 +9,6 @@ const {
 const {
   DEFAULT_APP_VERSION,
   DEFAULT_IOS_BUILD_NUMBER,
-  DEFAULT_IOS_DEPLOYMENT_TARGET,
   DEFAULT_NOTIFICATION_SERVICE_FILE,
   IOS_SOUNDS_DIR,
   USER_ACTIVITY_TYPES,
@@ -19,6 +18,141 @@ const { isValidIOSSoundFileExtension, log, throwPluginError } = require('./utils
 
 function getExtensionDir(projectRoot, extensionName) {
   return path.join(projectRoot, 'ios', extensionName);
+}
+
+function getMainGroupUuid(project) {
+  return project.getFirstProject().firstProject.mainGroup;
+}
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mergeUniqueArrayValues(base, extra) {
+  const seen = new Set();
+  const merged = [];
+
+  for (const value of base.concat(extra)) {
+    const key = JSON.stringify(value);
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(value);
+    }
+  }
+
+  return merged;
+}
+
+function mergePlistValues(baseValue, overrideValue) {
+  if (Array.isArray(baseValue) && Array.isArray(overrideValue)) {
+    return mergeUniqueArrayValues(baseValue, overrideValue);
+  }
+
+  if (isPlainObject(baseValue) && isPlainObject(overrideValue)) {
+    return mergePlistObjects(baseValue, overrideValue);
+  }
+
+  return overrideValue;
+}
+
+function mergePlistObjects(baseObject, overrideObject) {
+  const merged = { ...baseObject };
+
+  for (const [key, value] of Object.entries(overrideObject || {})) {
+    if (key in merged) {
+      merged[key] = mergePlistValues(merged[key], value);
+    } else {
+      merged[key] = value;
+    }
+  }
+
+  return merged;
+}
+
+function escapePlistString(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function serializePlistValue(value, indentLevel) {
+  const indent = '  '.repeat(indentLevel);
+
+  if (Array.isArray(value)) {
+    if (!value.length) {
+      return `${indent}<array/>\n`;
+    }
+
+    let output = `${indent}<array>\n`;
+    for (const item of value) {
+      output += serializePlistValue(item, indentLevel + 1);
+    }
+    output += `${indent}</array>\n`;
+    return output;
+  }
+
+  if (isPlainObject(value)) {
+    let output = `${indent}<dict>\n`;
+    for (const [key, dictValue] of Object.entries(value)) {
+      output += `${indent}  <key>${escapePlistString(key)}</key>\n`;
+      output += serializePlistValue(dictValue, indentLevel + 1);
+    }
+    output += `${indent}</dict>\n`;
+    return output;
+  }
+
+  if (typeof value === 'boolean') {
+    return `${indent}<${value ? 'true' : 'false'}/>\n`;
+  }
+
+  if (typeof value === 'number') {
+    const tag = Number.isInteger(value) ? 'integer' : 'real';
+    return `${indent}<${tag}>${value}</${tag}>\n`;
+  }
+
+  return `${indent}<string>${escapePlistString(value)}</string>\n`;
+}
+
+function createPlistDocument(rootObject) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+${serializePlistValue(rootObject, 0)}</plist>
+`;
+}
+
+function getExtensionInfoPlist(props, appVersion, buildNumber) {
+  return mergePlistObjects(
+    {
+      CFBundleDevelopmentRegion: '$(DEVELOPMENT_LANGUAGE)',
+      CFBundleDisplayName: props.extensionName,
+      CFBundleExecutable: '$(EXECUTABLE_NAME)',
+      CFBundleIdentifier: '$(PRODUCT_BUNDLE_IDENTIFIER)',
+      CFBundleInfoDictionaryVersion: '6.0',
+      CFBundleName: '$(PRODUCT_NAME)',
+      CFBundlePackageType: 'XPC!',
+      CFBundleShortVersionString: appVersion,
+      CFBundleVersion: buildNumber,
+      NSExtension: {
+        NSExtensionPointIdentifier: 'com.apple.usernotifications.service',
+        NSExtensionPrincipalClass: '$(PRODUCT_MODULE_NAME).NotificationService',
+      },
+    },
+    props.extensionInfoPlist,
+  );
+}
+
+function getExtensionEntitlements(props) {
+  const baseEntitlements = {};
+
+  if (props.appGroupName) {
+    baseEntitlements['com.apple.security.application-groups'] = [props.appGroupName];
+  }
+
+  return mergePlistObjects(baseEntitlements, props.extensionEntitlements);
 }
 
 function createNotificationServiceHeader() {
@@ -63,53 +197,12 @@ function createNotificationServiceImplementation() {
 `;
 }
 
-function createExtensionInfoPlist(extensionName, appVersion, buildNumber) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleDevelopmentRegion</key>
-  <string>$(DEVELOPMENT_LANGUAGE)</string>
-  <key>CFBundleDisplayName</key>
-  <string>${extensionName}</string>
-  <key>CFBundleExecutable</key>
-  <string>$(EXECUTABLE_NAME)</string>
-  <key>CFBundleIdentifier</key>
-  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-  <key>CFBundleInfoDictionaryVersion</key>
-  <string>6.0</string>
-  <key>CFBundleName</key>
-  <string>$(PRODUCT_NAME)</string>
-  <key>CFBundlePackageType</key>
-  <string>XPC!</string>
-  <key>CFBundleShortVersionString</key>
-  <string>${appVersion}</string>
-  <key>CFBundleVersion</key>
-  <string>${buildNumber}</string>
-  <key>NSExtension</key>
-  <dict>
-    <key>NSExtensionPointIdentifier</key>
-    <string>com.apple.usernotifications.service</string>
-    <key>NSExtensionPrincipalClass</key>
-    <string>$(PRODUCT_MODULE_NAME).NotificationService</string>
-  </dict>
-</dict>
-</plist>
-`;
+function createExtensionInfoPlist(props, appVersion, buildNumber) {
+  return createPlistDocument(getExtensionInfoPlist(props, appVersion, buildNumber));
 }
 
-function createExtensionEntitlements(appGroupName) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>com.apple.security.application-groups</key>
-  <array>
-    <string>${appGroupName}</string>
-  </array>
-</dict>
-</plist>
-`;
+function createExtensionEntitlements(props) {
+  return createPlistDocument(getExtensionEntitlements(props));
 }
 
 function createPodfileTargetBlock(extensionName) {
@@ -154,22 +247,34 @@ function addExtensionFiles(config, props) {
       const appVersion = modConfig.version || DEFAULT_APP_VERSION;
       const buildNumber = modConfig.ios?.buildNumber || DEFAULT_IOS_BUILD_NUMBER;
 
-      fs.writeFileSync(path.join(iosDir, 'NotificationService.h'), createNotificationServiceHeader());
+      fs.writeFileSync(
+        path.join(iosDir, 'NotificationService.h'),
+        createNotificationServiceHeader(),
+      );
       fs.writeFileSync(
         path.join(iosDir, `${props.extensionName}-Info.plist`),
-        createExtensionInfoPlist(props.extensionName, appVersion, buildNumber),
+        createExtensionInfoPlist(props, appVersion, buildNumber),
       );
       fs.writeFileSync(
         path.join(iosDir, `${props.extensionName}.entitlements`),
-        createExtensionEntitlements(props.appGroupName),
+        createExtensionEntitlements(props),
       );
 
       const defaultNotificationServicePath = path.join(iosDir, DEFAULT_NOTIFICATION_SERVICE_FILE);
 
       if (props.customNotificationServiceFilePath) {
-        const customSource = fs.readFileSync(
-          path.resolve(modConfig.modRequest.projectRoot, props.customNotificationServiceFilePath),
+        const customSourcePath = path.resolve(
+          modConfig.modRequest.projectRoot,
+          props.customNotificationServiceFilePath,
         );
+
+        if (!fs.existsSync(customSourcePath)) {
+          throwPluginError(
+            `Custom notification service file '${props.customNotificationServiceFilePath}' could not be found.`,
+          );
+        }
+
+        const customSource = fs.readFileSync(customSourcePath);
         fs.writeFileSync(defaultNotificationServicePath, customSource);
       } else {
         fs.writeFileSync(defaultNotificationServicePath, createNotificationServiceImplementation());
@@ -263,42 +368,44 @@ function copyIOSSoundFiles(config, props) {
 function addExtensionTarget(config, props) {
   return withXcodeProject(config, modConfig => {
     const project = modConfig.modResults;
-    if (project.pbxTargetByName(props.extensionName)) {
-      return modConfig;
-    }
+    const existingTargetUuid = project.findTargetKey(props.extensionName);
+    let targetUuid = existingTargetUuid;
 
     const objects = project.hash.project.objects;
     objects.PBXContainerItemProxy = objects.PBXContainerItemProxy || {};
     objects.PBXTargetDependency = objects.PBXTargetDependency || {};
 
-    const target = project.addTarget(
-      props.extensionName,
-      'app_extension',
-      props.extensionName,
-      props.extensionBundleIdentifier,
-    );
+    if (!existingTargetUuid) {
+      const target = project.addTarget(
+        props.extensionName,
+        'app_extension',
+        props.extensionName,
+        props.extensionBundleIdentifier,
+      );
+      targetUuid = target.uuid;
 
-    project.addBuildPhase([], 'PBXFrameworksBuildPhase', 'Frameworks', target.uuid);
-    project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', target.uuid);
-    project.addBuildPhase([DEFAULT_NOTIFICATION_SERVICE_FILE], 'PBXSourcesBuildPhase', 'Sources', target.uuid);
+      project.addBuildPhase([], 'PBXFrameworksBuildPhase', 'Frameworks', targetUuid);
+      project.addBuildPhase([], 'PBXResourcesBuildPhase', 'Resources', targetUuid);
+      project.addBuildPhase(
+        [DEFAULT_NOTIFICATION_SERVICE_FILE],
+        'PBXSourcesBuildPhase',
+        'Sources',
+        targetUuid,
+      );
 
-    const group = project.addPbxGroup(
-      [
-        `${props.extensionName}-Info.plist`,
-        `${props.extensionName}.entitlements`,
-        'NotificationService.h',
-        DEFAULT_NOTIFICATION_SERVICE_FILE,
-      ],
-      props.extensionName,
-      props.extensionName,
-    );
+      const group = project.addPbxGroup(
+        [
+          `${props.extensionName}-Info.plist`,
+          `${props.extensionName}.entitlements`,
+          'NotificationService.h',
+          DEFAULT_NOTIFICATION_SERVICE_FILE,
+        ],
+        props.extensionName,
+        props.extensionName,
+      );
 
-    const pbxGroups = project.hash.project.objects.PBXGroup;
-    Object.keys(pbxGroups).forEach(key => {
-      if (typeof pbxGroups[key] === 'object' && !pbxGroups[key].name && !pbxGroups[key].path) {
-        project.addToPbxGroup(group.uuid, key);
-      }
-    });
+      project.addToPbxGroup(group.uuid, getMainGroupUuid(project));
+    }
 
     const configurations = project.pbxXCBuildConfigurationSection();
     Object.keys(configurations).forEach(key => {
@@ -313,8 +420,7 @@ function addExtensionTarget(config, props) {
           CODE_SIGN_ENTITLEMENTS: `${props.extensionName}/${props.extensionName}.entitlements`,
           CODE_SIGN_STYLE: 'Automatic',
           INFOPLIST_FILE: `${props.extensionName}/${props.extensionName}-Info.plist`,
-          IPHONEOS_DEPLOYMENT_TARGET:
-            props.iosDeploymentTarget || DEFAULT_IOS_DEPLOYMENT_TARGET,
+          IPHONEOS_DEPLOYMENT_TARGET: props.iosDeploymentTarget,
           PRODUCT_BUNDLE_IDENTIFIER: props.extensionBundleIdentifier,
           SWIFT_VERSION: '5.0',
           TARGETED_DEVICE_FAMILY: modConfig.ios?.supportsTablet ? '"1,2"' : '"1"',
@@ -326,7 +432,10 @@ function addExtensionTarget(config, props) {
       }
     });
 
-    log(`Created Xcode target '${props.extensionName}'.`, props.verbose);
+    log(
+      `${existingTargetUuid ? 'Updated' : 'Created'} Xcode target '${props.extensionName}'.`,
+      props.verbose,
+    );
     return modConfig;
   });
 }
@@ -354,9 +463,22 @@ function signTargets(config, props) {
 
 function addAppExtensionConfig(config, props) {
   const appExtensions = config.extra?.eas?.build?.experimental?.ios?.appExtensions || [];
-  if (appExtensions.find(extension => extension.targetName === props.extensionName)) {
-    return config;
-  }
+  const entitlements = getExtensionEntitlements(props);
+  const nextExtension = {
+    bundleIdentifier: props.extensionBundleIdentifier,
+    entitlements,
+    targetName: props.extensionName,
+  };
+  const hasExistingExtension = appExtensions.some(
+    extension => extension.targetName === props.extensionName,
+  );
+  const nextAppExtensions = hasExistingExtension
+    ? appExtensions.map(extension =>
+        extension.targetName === props.extensionName
+          ? { ...extension, ...nextExtension }
+          : extension,
+      )
+    : appExtensions.concat([nextExtension]);
 
   return {
     ...config,
@@ -370,15 +492,7 @@ function addAppExtensionConfig(config, props) {
             ...config.extra?.eas?.build?.experimental,
             ios: {
               ...config.extra?.eas?.build?.experimental?.ios,
-              appExtensions: appExtensions.concat([
-                {
-                  bundleIdentifier: props.extensionBundleIdentifier,
-                  entitlements: {
-                    'com.apple.security.application-groups': [props.appGroupName],
-                  },
-                  targetName: props.extensionName,
-                },
-              ]),
+              appExtensions: nextAppExtensions,
             },
           },
         },
@@ -436,17 +550,20 @@ function withNotifeeIos(config, props) {
     });
   }
 
-  nextConfig = copyIOSSoundFiles(nextConfig, props);
-
   if (!props.enableNotificationServiceExtension) {
-    return nextConfig;
+    return copyIOSSoundFiles(nextConfig, props);
   }
 
   nextConfig = withEntitlementsPlist(nextConfig, modConfig => {
     const key = 'com.apple.security.application-groups';
+    const requiredGroups = Array.isArray(getExtensionEntitlements(props)[key])
+      ? getExtensionEntitlements(props)[key]
+      : [];
     const currentGroups = Array.isArray(modConfig.modResults[key]) ? modConfig.modResults[key] : [];
-    if (!currentGroups.includes(props.appGroupName)) {
-      currentGroups.push(props.appGroupName);
+    for (const group of requiredGroups) {
+      if (!currentGroups.includes(group)) {
+        currentGroups.push(group);
+      }
     }
     modConfig.modResults[key] = currentGroups;
     return modConfig;
@@ -457,6 +574,7 @@ function withNotifeeIos(config, props) {
   nextConfig = addExtensionFiles(nextConfig, props);
   nextConfig = addExtensionTarget(nextConfig, props);
   nextConfig = signTargets(nextConfig, props);
+  nextConfig = copyIOSSoundFiles(nextConfig, props);
 
   return nextConfig;
 }

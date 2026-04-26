@@ -3,29 +3,31 @@ title: Releases
 description: Notifee API releases
 ---
 
+> Historical note: the `7.8.0` entry below refers to the removal of an older Expo integration. Current `@psync/notifee` releases ship an official Expo config plugin again. See [Installation](/react-native/docs/installation) for the current Expo setup.
+
 ## [9.1.8](https://github.com/invertase/notifee/compare/@psync/notifee@9.1.7...@psync/notifee@9.1.8) (2024-12-20)
 
 ### Bug Fixes
 
-* **android:** prevent headless task double-invocation ([a799167](https://github.com/invertase/notifee/commit/a79916748f53ea7cdd66d60ba9054472aabc050b))
+- **android:** prevent headless task double-invocation ([a799167](https://github.com/invertase/notifee/commit/a79916748f53ea7cdd66d60ba9054472aabc050b))
 
 ## [9.1.7](https://github.com/invertase/notifee/compare/@psync/notifee@9.1.6...@psync/notifee@9.1.7) (2024-12-17)
 
 ### Bug Fixes
 
-* **ios:** copy iOS NotifeeCore library more carefully during build ([68f230f](https://github.com/invertase/notifee/commit/68f230f32ec75e993521b0feb8f9358fb008d3e5))
+- **ios:** copy iOS NotifeeCore library more carefully during build ([68f230f](https://github.com/invertase/notifee/commit/68f230f32ec75e993521b0feb8f9358fb008d3e5))
 
 ## [9.1.6](https://github.com/invertase/notifee/compare/@psync/notifee@9.1.5...@psync/notifee@9.1.6) (2024-12-17)
 
 ### Bug Fixes
 
-* **android:** remove semantic-release test commit ([0b4ecdf](https://github.com/invertase/notifee/commit/0b4ecdf30f7336f4bcfb8b25a07b0044a2943504))
+- **android:** remove semantic-release test commit ([0b4ecdf](https://github.com/invertase/notifee/commit/0b4ecdf30f7336f4bcfb8b25a07b0044a2943504))
 
 ## [9.1.5](https://github.com/invertase/notifee/compare/@psync/notifee@9.1.4...@psync/notifee@9.1.5) (2024-12-17)
 
 ### Bug Fixes
 
-* **android:** semantic-release test commit ([cf5c7a9](https://github.com/invertase/notifee/commit/cf5c7a9b5b9c14046ffa6e5ea04c54157e9aff42))
+- **android:** semantic-release test commit ([cf5c7a9](https://github.com/invertase/notifee/commit/cf5c7a9b5b9c14046ffa6e5ea04c54157e9aff42))
 
 ## 9.1.4
 
@@ -88,11 +90,11 @@ BREAKING CHANGES!
 
 Android 14+ requires two changes to avoid crashes or Play Store rejection
 
-1) The USE_FULL_SCREEN_INTENT permission is not longer included by default as most apps do not need it. If you need it you must now manually add the permission to AndroidManifest.xml
+1. The USE_FULL_SCREEN_INTENT permission is not longer included by default as most apps do not need it. If you need it you must now manually add the permission to AndroidManifest.xml
 
-2) Foreground Service Types are a strict requirement for Android 14 and require Play Store approval. You must use compileSdk 34 or higher for this release. If you need foreground service types you will need to specify the exact foreground service type permissions in your AndroidManifest.xml and you must replace the service definition in AndroidManifest.xml and you must use the new optional foregroundServiceTypes parameter in the foreground service API call
+2. Foreground Service Types are a strict requirement for Android 14 and require Play Store approval. You must use compileSdk 34 or higher for this release. If you need foreground service types you will need to specify the exact foreground service type permissions in your AndroidManifest.xml and you must replace the service definition in AndroidManifest.xml and you must use the new optional foregroundServiceTypes parameter in the foreground service API call
 
-Thanks to all the contributors that proposed these fixes so that Notifee continues to work well on Android 14 - handling the platform security changes as Google makes new releases is not easy, and they *always* change the Nofitication API surface API. Notifee would not work without the community contributions.
+Thanks to all the contributors that proposed these fixes so that Notifee continues to work well on Android 14 - handling the platform security changes as Google makes new releases is not easy, and they _always_ change the Nofitication API surface API. Notifee would not work without the community contributions.
 
 Note, v8.0.0 was published 2 years ago as an alpha on npmjs.com but is unused. However, the version number was consumed by that alpha publish so we have skipped to v9.
 
@@ -120,7 +122,7 @@ consumed
 - fix: Remove EventSubcriptionVendor type usage as it's removed in RN0.73 [#1001](https://github.com/invertase/notifee/issues/1001)
 - fix(android): fix an issue when using inexact alarms [#981](https://github.com/invertase/notifee/issues/981)
 - style(lint): fix lint errors from previous commits [#1073](https://github.com/invertase/notifee/issues/1073)
-q- test(ci, ios): ios build behaving strangely - tune timeouts
+  q- test(ci, ios): ios build behaving strangely - tune timeouts
 - test(example): minimum changes to get example working
 - test(ci): remove log compression pre-artifact upload
 - test(ci): use codecov action vs bash uploader
@@ -191,7 +193,7 @@ q- test(ci, ios): ios build behaving strangely - tune timeouts
 
 ## 7.2.0
 
-- **[Android]**: Fixes an issue for Android 12 with quick actions when the app is in the background  (Fixes [#404](https://github.com/invertase/notifee/issues/404)).
+- **[Android]**: Fixes an issue for Android 12 with quick actions when the app is in the background (Fixes [#404](https://github.com/invertase/notifee/issues/404)).
 - **[Android]**: Prevents a NullPointerException to occur when a background service is triggered (Fixes [#592](https://github.com/invertase/notifee/issues/592)).
 
 ## 7.1.0
@@ -219,7 +221,7 @@ q- test(ci, ios): ios build behaving strangely - tune timeouts
 
 ## 6.0.0
 
-- **[Android] BREAKING CHANGE**: Added support for requesting permission on Android 13 via `requestPermission`,  the minimum compileSdkVersion required has increased to 33. And, to support this feature, the targetSdkVersion must also be increased to 33.
+- **[Android] BREAKING CHANGE**: Added support for requesting permission on Android 13 via `requestPermission`, the minimum compileSdkVersion required has increased to 33. And, to support this feature, the targetSdkVersion must also be increased to 33.
 
 ## 5.7.0
 
@@ -240,12 +242,12 @@ q- test(ci, ios): ios build behaving strangely - tune timeouts
 
 ## 5.4.0
 
-- **[Android]**: Fixes an issue when recreating the trigger notifications after a reboot with AlarmManager  (Fixes [#422](https://github.com/invertase/notifee/issues/422)).
+- **[Android]**: Fixes an issue when recreating the trigger notifications after a reboot with AlarmManager (Fixes [#422](https://github.com/invertase/notifee/issues/422)).
 - **[Android]**: Fixes an issue around displaying a heads-up notification on Xiaomi devices by adding the permission `ACCESS_NOTIFICATION_POLICY` to the `AndroidManifest` (Fixes [#296](https://github.com/invertase/notifee/issues/296)).
 
 ## 5.3.0
 
-- **[Android]**: Elimates the need to add the local maven repository manually to your project  (PR [#414](https://github.com/invertase/notifee/pull/414)).
+- **[Android]**: Elimates the need to add the local maven repository manually to your project (PR [#414](https://github.com/invertase/notifee/pull/414)).
 - **[Android]**: Implements support to light up the screen when a notification is displayed. Introduces a new property `lightUpScreen` on the `NotificationAndroid` interface (PR [#403](https://github.com/invertase/notifee/pull/403)).
 
 ## 5.2.2
@@ -261,7 +263,7 @@ q- test(ci, ios): ios build behaving strangely - tune timeouts
 
 - **[Android]**: Fixes a compiling issue for some project configurations with error message "Project with path ':app' could not be found in project ':notifee_react-native'" (Fixes [#288](https://github.com/invertase/notifee/issues/288)).
 - **[Android]**: Fixes an issue where the current version of Notifee does not build when using an expo managed app with the expo plugin (Fixes [#314](https://github.com/invertase/notifee/issues/314)).
-- **[Web]**: Basic support for react-native-web - notifications do not work on web yet, but the package is now compatible with web (PR  [#369](https://github.com/invertase/notifee/pull/369))
+- **[Web]**: Basic support for react-native-web - notifications do not work on web yet, but the package is now compatible with web (PR [#369](https://github.com/invertase/notifee/pull/369))
 
 ## 5.1.0
 
@@ -308,7 +310,7 @@ To learn more, see Permissions documentation for [iOS](https://notifee.app/react
 
 ## 4.0.0
 
-- **[Android]: BREAKING CHANGE** : the minimum compileSdkVersion required has increased to 31, to fix an issue with Android 12 where the app will crash due to a missing Intent immutability flag (Fixes [#238](https://github.com/invertase/notifee/issues/238)). You do not need to alter targetSdkVersion or anything else - but you *must* increase compileSdkVersion to 31. **Please note, JDK11 is strongly recommended when using compile or target sdk 31**. **Please note, we do not correctly handle the new "exact alarm" Android 12 restrictions so we recommend staying on targetSdkVersion 30 for now.**
+- **[Android]: BREAKING CHANGE** : the minimum compileSdkVersion required has increased to 31, to fix an issue with Android 12 where the app will crash due to a missing Intent immutability flag (Fixes [#238](https://github.com/invertase/notifee/issues/238)). You do not need to alter targetSdkVersion or anything else - but you _must_ increase compileSdkVersion to 31. **Please note, JDK11 is strongly recommended when using compile or target sdk 31**. **Please note, we do not correctly handle the new "exact alarm" Android 12 restrictions so we recommend staying on targetSdkVersion 30 for now.**
 
 ## 3.0.4
 
@@ -366,7 +368,7 @@ To learn more, see Permissions documentation for [iOS](https://notifee.app/react
   - `cancelAllNotifications(ids)`
   - `cancelDisplayedNotifications(ids)`
   - `cancelTriggerNotifications(ids)`
-- **BREAKING**: Fixes an issue when setting a custom sound on a notification channel (Fixes [#341](https://github.com/notifee/react-native-notifee/issues/341)). Sounds now must be specified without the file extension, previously it was optional. **If you were using custom sounds on Android>7 prior to this, you will need to create a *new* notification channel or the reference to your custom sound on the channel will likely not survive app updates. We apologize for the inconvenience**
+- **BREAKING**: Fixes an issue when setting a custom sound on a notification channel (Fixes [#341](https://github.com/notifee/react-native-notifee/issues/341)). Sounds now must be specified without the file extension, previously it was optional. **If you were using custom sounds on Android>7 prior to this, you will need to create a _new_ notification channel or the reference to your custom sound on the channel will likely not survive app updates. We apologize for the inconvenience**
 
 ## 1.9.2
 
@@ -422,11 +424,11 @@ To learn more, see Permissions documentation for [iOS](https://notifee.app/react
 
 ## 1.2.0
 
-- **[iOS]**:  Includes a Notification Service Extension Helper to take advantage of Notifee with remote notifications. To learn more, view the [Remote Notification Support](/react-native/ios/remote-notification-support) documentation.
+- **[iOS]**: Includes a Notification Service Extension Helper to take advantage of Notifee with remote notifications. To learn more, view the [Remote Notification Support](/react-native/ios/remote-notification-support) documentation.
 
 ## 1.1.2
 
-- **[iOS]**:  Enforce v1.10+ of CocoaPods (Fixes [#230](https://github.com/notifee/react-native-notifee/issues/230)).
+- **[iOS]**: Enforce v1.10+ of CocoaPods (Fixes [#230](https://github.com/notifee/react-native-notifee/issues/230)).
 
 ## 1.1.1
 

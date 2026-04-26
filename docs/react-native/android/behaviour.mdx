@@ -15,17 +15,21 @@ Users have full control over _when_ notification sounds are made:
 - Toggling "Do not disturb" mode on their device.
 
 By default, notifications will use the device's default notification sound, or whatever the user has chosen as the device default.
-If required, you can also provide a custom `.mp3` sound or use a different device sound.
+If required, you can also provide a custom local sound resource or use a different device sound.
 
 ### Custom Sound
 
-Customs sounds must be local `.mp3` files. Unfortunately, it is not possible to use remote sound files at this time.
+Custom sounds must be local files packaged into your Android app. Remote sound files are not supported here.
+
+Android supports a wider range of audio containers than iOS notification sounds do. In practice, `.mp3`, `.wav`, and `.ogg` are the most predictable choices for Android notification sounds across devices.
 
 Go ahead and download your sound file locally. The file needs to be place inside & bundled with your Android project inside of a `raw` directory in the project resources. For example:
 
 `/android/app/src/main/res/raw/hollow.mp3`
 
 You may need to create the `res` and/or `raw` directories if they do not already exist.
+
+If you are using Expo with `expo prebuild`, the `@psync/notifee` config plugin can copy these files for you with the `androidSoundFiles` option.
 
 Once added, rebuild your Android project.
 
@@ -65,12 +69,12 @@ import notifee from '@psync/notifee';
 const soundsList = await NotificationSounds.getNotifications('notification');
 
 await notifee.createChannel({
-       id: "custom-sound",
-       name: "System Sound",
-       // Set sound to Aldebaran
-       // (url: "content://media/internal/audio/media/30")
-       sound: soundsList[0].url,
-  });
+  id: 'custom-sound',
+  name: 'System Sound',
+  // Set sound to Aldebaran
+  // (url: "content://media/internal/audio/media/30")
+  sound: soundsList[0].url,
+});
 ```
 
 ## Auto Cancelling
@@ -190,6 +194,7 @@ notifee.displayNotification({
 ```
 
 and, by adding `showWhenLocked` and `turnScreenOn` to your activity in android/app/src/main/AndroidManifest.xml:
+
 ```xml
   <activity
     ...
@@ -200,6 +205,7 @@ and, by adding `showWhenLocked` and `turnScreenOn` to your activity in android/a
 
 and, by adding the USE_FULL_SCREEN_INTENT permission in
 android/app/src/main/AndroidManifest.xml:
+
 ```xml
   <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT">
 ```
@@ -210,7 +216,7 @@ Running this code, Notifee will attempt to launch the activity when the notifica
 
 > Please note that the notification may be shown as a heads-up notification, instead of a full-screen notification, while the user is using the device.
 
-Full-screen actions have the same properties as press actions, with the same `Advanced` concepts of specifying a Custom Component or an Android Custom Activity: 
+Full-screen actions have the same properties as press actions, with the same `Advanced` concepts of specifying a Custom Component or an Android Custom Activity:
 
 ```js
 notifee.displayNotification({
@@ -226,7 +232,7 @@ notifee.displayNotification({
       launchActivity: 'com.awesome.app.FullScreenActivity',
     },
   },
-})
+});
 ```
 
 To learn more about these concepts, view the [Press Action](/react-native/android/interaction#press-action) documentation.

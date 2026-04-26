@@ -49,17 +49,28 @@ bun add @psync/notifee
 
 ## Expo Support
 
-`@psync/notifee` ships an official Expo config plugin for `expo prebuild`. Add it to your Expo config:
+`@psync/notifee` ships an official Expo config plugin for `expo prebuild`. Pair it with `expo-build-properties` when you need to align the main app's Android SDK levels or iOS deployment target:
 
 ```js
 export default {
   expo: {
     plugins: [
       [
+        'expo-build-properties',
+        {
+          android: {
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
+            buildToolsVersion: '36.0.0',
+          },
+          ios: {
+            deploymentTarget: '15.1',
+          },
+        },
+      ],
+      [
         '@psync/notifee',
         {
-          apsEnvMode: 'development',
-          backgroundModes: ['remote-notification'],
           androidIcons: [
             {
               name: 'ic_stat_notify',
@@ -67,9 +78,17 @@ export default {
               type: 'small',
             },
           ],
-          enableNotificationServiceExtension: true,
+          androidSoundFiles: [
+            {
+              name: 'message_chime',
+              path: './assets/notifications/message_chime.mp3',
+            },
+          ],
+          backgroundModes: ['remote-notification'],
           iosSoundFiles: ['./assets/notifications/chime.wav'],
-          iosDeploymentTarget: '15.1',
+          notificationServiceExtension: {
+            enabled: true,
+          },
         },
       ],
     ],
@@ -77,9 +96,12 @@ export default {
 };
 ```
 
+The plugin only applies the native changes you opt into. It does not add iOS background modes unless you set `backgroundModes`, and when `iosSoundFiles` plus `notificationServiceExtension.enabled` are both set it wires those files into the app and extension during the same prebuild. Android sound files are packaged separately through `androidSoundFiles`, because Android accepts a broader range of audio formats than iOS notification sounds do.
+
 See the [package README](./packages/react-native/README.md#expo-config-plugin) for all supported options.
 
 ## Expo Support TODOs
+
 - [ ] Add an Expo Router deep-link helper preset for common notification press/open flows
 - [ ] Publish a companion `expo-build-properties` preset / guide for SDK, JDK, and native build alignment
 - [ ] Add config-plugin support for foreground service manifest customization
@@ -230,7 +252,6 @@ To utilise Detox's functionality to mock a local notification and trigger notife
 ```
 
 The important part is to make sure you have a `__notifee_notification` object under `payload` with the default properties.
-
 
 **Note**: Firebase Dynamic Links has been deprecated and removed. Migrate to Universal Links (iOS) and App Links (Android) for deep linking functionality.
 
