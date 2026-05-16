@@ -30,7 +30,7 @@ import notifee, {
   AlarmType,
   TimeUnit,
 } from '@psync/notifee';
-import type { FcmRemoteMessage } from '@psync/notifee';
+import type { FcmRemoteMessage, IOSNotificationCategory } from '@psync/notifee';
 
 // ============================================================================
 // COLORS
@@ -60,6 +60,30 @@ const Colors = {
     textMuted: '#9CA3AF',
   },
 };
+
+const IOS_NOTIFICATION_CATEGORIES: IOSNotificationCategory[] = [
+  {
+    id: 'message',
+    actions: [
+      {
+        id: 'reply',
+        title: 'Reply',
+        input: {
+          buttonText: 'Send',
+          placeholderText: 'Type a message',
+        },
+      },
+      { id: 'like', title: 'Like', foreground: true },
+    ],
+  },
+  {
+    id: 'call',
+    actions: [
+      { id: 'answer_call', title: 'Answer', foreground: true },
+      { id: 'decline_call', title: 'Decline', destructive: true },
+    ],
+  },
+];
 
 // ============================================================================
 // GLOBAL BACKGROUND HANDLERS
@@ -223,6 +247,7 @@ export default function NotificationDemo() {
       );
 
       if (Platform.OS === 'ios') {
+        await notifee.setNotificationCategories(IOS_NOTIFICATION_CATEGORIES);
         const count = await notifee.getBadgeCount();
         setBadgeCount(count);
       }
@@ -369,7 +394,9 @@ export default function NotificationDemo() {
       ios: {
         attachments: [
           {
+            id: 'profile-photo',
             url: 'https://picsum.photos/id/1015/400/400.jpg',
+            typeHint: 'public.jpeg',
             thumbnailHidden: false,
           },
         ],
@@ -1234,22 +1261,7 @@ export default function NotificationDemo() {
       return;
     }
     try {
-      await notifee.setNotificationCategories([
-        {
-          id: 'message',
-          actions: [
-            { id: 'reply', title: 'Reply', input: true },
-            { id: 'like', title: 'Like', foreground: true },
-          ],
-        },
-        {
-          id: 'call',
-          actions: [
-            { id: 'answer_call', title: 'Answer', foreground: true },
-            { id: 'decline_call', title: 'Decline', destructive: true },
-          ],
-        },
-      ]);
+      await notifee.setNotificationCategories(IOS_NOTIFICATION_CATEGORIES);
       Alert.alert('Categories', 'Set message and call categories');
     } catch (error) {
       console.error('[App] setNotificationCategories error:', error);
@@ -1394,7 +1406,7 @@ export default function NotificationDemo() {
           onPress={sendWithActions}
           icon="🔘"
           title="Notification with Actions"
-          subTitle="Buttons and reply input (Android)"
+          subTitle="Buttons and reply input"
           colors={colors}
         />
         <TestButton
